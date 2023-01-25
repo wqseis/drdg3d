@@ -1,0 +1,43 @@
+
+# configure file for dynamic rupture simulations 
+# in YAML format
+
+# number of processors
+nproc : 4
+# simulation time length (in seconds)
+simu_time_max : 5
+
+# CFL number (<0.5)
+cfl_number : 0.5
+
+timestep : 5e-2
+
+# mesh dir
+mesh_dir : data
+# output dir
+data_dir : data
+
+# snapshot output: skip every N steps
+fault_snap_skip   : 10
+grdsurf_snap_skip : 10
+
+# export ground surface displacement
+export_grdsurf_displ : 1
+
+export_media : 0
+export_wave : 0
+
+use_damp : 0
+
+initial_condition_wave : 1
+src_gaussian_width : 5.0
+src_loc_x : 0.0
+src_loc_y : 0.0
+src_loc_z : 0.0
+src_m0 : 1.0
+src_mxx : 1.0
+src_myy : 1.0
+src_mzz : 1.0
+src_myz : 0.0
+src_mxz : 0.0
+src_mxy : 0.0

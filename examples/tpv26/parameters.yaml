@@ -1,0 +1,47 @@
+
+# configure file for dynamic rupture simulations 
+# in YAML format
+
+# number of processors
+nproc : 4
+# simulation time length (in seconds)
+simu_time_max : 15.05
+
+# CFL number (<0.5)
+cfl_number : 0.5
+
+# mesh dir
+mesh_dir : data
+# output dir
+data_dir : data
+
+# snapshot output: skip every N steps
+fault_snap_skip   : 10
+grdsurf_snap_skip : 10
+
+# export ground surface displacement
+export_grdsurf_displ : 1
+
+# 4 for time weakening
+friction_law : 4
+
+nucleate_y0 : -5.0
+nucleate_z0 : -10.0
+nucleate_rcrit : 4.0
+nucleate_Vrup : 2.4248 # 0.7*Vs
+TimeForcedRup : 0.5
+
+plasticity: 1
+
+# For tpv27
+cohesion : 1.36      # MPa
+blkfric : 0.1934
+Tvisc : 0.03        # sec
+coef_byy : 0.926793
+coef_bxx : 1.073206
+coef_bxy : 0.169029
+fluidpres_profile_h1 : 15
+fluidpres_profile_h2 : 20
+fluidpres_profile_o1 : 1
+fluidpres_profile_o2 : 0
+
