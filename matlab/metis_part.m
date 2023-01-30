@@ -43,11 +43,20 @@ if (metis_version == 4)
 elseif (metis_version == 5)
     %metis_dir = '/usr/local/bin';
     %metis_dir = '/home/wzhang/spack/opt/spack/linux-ubuntu20.04-cascadelake/gcc-9.4.0/metis-5.1.0-g3hkcjmmfvljvil6u6okitnlxozpw3mn/bin';
-    cmd = sprintf('%s/m2gmetis tmp.met tmp.met.dgraph',metis_dir);
+
+    exe = strtrim(fileread('../../path.m2gmetis'));
+    %cmd = sprintf('%s/m2gmetis tmp.met tmp.met.dgraph',metis_dir);
+    cmd = sprintf('%s tmp.met tmp.met.dgraph',exe);
+    disp(cmd);
     system(cmd);
-    cmd = sprintf('%s/gpmetis tmp.met.dgraph %d',metis_dir,np);
+
+    exe = strtrim(fileread('../../path.gpmetis'));
+    %cmd = sprintf('%s/gpmetis tmp.met.dgraph %d',mesh_dir,np);
+    cmd = sprintf('%s tmp.met.dgraph %d',exe,np);
+    disp(cmd);
     system(cmd);
-    part = load(['tmp.met.dgraph.part.',num2str(np)]);    
+
+    part = load(['tmp.met.dgraph.part.',num2str(np)]);
 end
 
 % part number may start from 0 or 1 depend on the version, so here I force

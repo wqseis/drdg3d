@@ -32,6 +32,11 @@ After installing requirements, the program is installed as follows.
 
 Three executable files will be generated in the bin  directory: **exe_solver**, **exe_get_neigh** and **exe_part_mesh**.
 
+Before running the examples, set the path first:
+```bash
+> bash scripts/setenv.sh
+```
+
 ## Usage
 
 We take tpv5 as an example:
