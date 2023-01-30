@@ -1,0 +1,16 @@
+#
+.DS_Store
+bin
+obj
+*.o
+*.mod
+exe_solver
+exe_get_neigh
+exe_part_mesh
+*.inp
+*.exo
+mesh.nc
+fault*.nc
+grdsurf*.nc
+recv*.nc
+data/
