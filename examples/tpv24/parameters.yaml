@@ -28,5 +28,5 @@ friction_law : 4
 nucleate_y0 : -8.0
 nucleate_z0 : -10.0
 nucleate_rcrit : 4.0
-nucleate_Vr : 2.4248 # 0.7*Vs
+nucleate_Vrup : 2.4248 # 0.7*Vs
 TimeForcedRup : 0.0
