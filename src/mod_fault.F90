@@ -143,10 +143,16 @@ subroutine fault_init(mesh)
   allocate(mesh%dtau0m   (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%dtau0l   (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%stress  (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%stress1 (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%stress2 (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%sigma   (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%Slip    (Nfp,Nfaces,mesh%nfault_elem))
-  allocate(mesh%mSlip   (Nfp,Nfaces,mesh%nfault_elem))
-  allocate(mesh%tSlip   (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%Slip1   (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%Slip2   (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%mSlip1  (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%tSlip1  (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%mSlip2  (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%tSlip2  (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%sliprate(Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%sliprate1(Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%sliprate2(Nfp,Nfaces,mesh%nfault_elem))
@@ -173,9 +179,15 @@ subroutine fault_init(mesh)
   mesh%mstate(:,:,:) = 0
 
   mesh%slip    (:,:,:) = 0
-  mesh%mslip   (:,:,:) = 0
-  mesh%tslip   (:,:,:) = 0
+  mesh%slip1   (:,:,:) = 0
+  mesh%slip2   (:,:,:) = 0
+  mesh%mslip1   (:,:,:) = 0
+  mesh%tslip1   (:,:,:) = 0
+  mesh%mslip2   (:,:,:) = 0
+  mesh%tslip2   (:,:,:) = 0
   mesh%sliprate(:,:,:) = 0
+  mesh%sliprate1(:,:,:) = 0
+  mesh%sliprate2(:,:,:) = 0
 
   mesh%ruptime(:,:,:) = -1
 

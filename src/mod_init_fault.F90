@@ -375,6 +375,9 @@ subroutine fault_init_external(mesh)
           mesh%dtau0m(i,is,ief) = dTm
           mesh%dtau0l(i,is,ief) = dTl
 
+          ! write initial stress
+          mesh%stress1(i,is,ief) = Tm+0*dTm
+          mesh%stress2(i,is,ief) = Tl+0*dTl
           mesh%stress(i,is,ief) = sqrt((Tm+0*dTm)**2+(Tl+0*dTl)**2)
           mesh%sigma (i,is,ief) = Tn+0*dTn
         end do

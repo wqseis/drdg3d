@@ -222,9 +222,11 @@ do it = 1,nt
   mesh%current_time = (it-1)*dt
 
   mu = u
-  mesh%mslip = mesh%slip
+  mesh%mslip1 = mesh%slip1
+  mesh%mslip2 = mesh%slip2
   tu = 0.0
-  mesh%tslip = 0.0
+  mesh%tslip1 = 0.0
+  mesh%tslip2 = 0.0
   ! rate state
   mesh%mstate = mesh%state
   mesh%tstate = 0.0
@@ -265,8 +267,10 @@ do it = 1,nt
         u  = mu+0.5d0*dt*hu
         tu = mu+1.0d0/6.0d0*dt*hu
 
-        mesh%slip  = mesh%mslip+0.5d0*dt*mesh%sliprate
-        mesh%tslip = mesh%mslip+1.0d0/6.0d0*dt*mesh%sliprate
+        mesh%slip1  = mesh%mslip1+0.5d0*dt*mesh%sliprate1
+        mesh%tslip1 = mesh%mslip1+1.0d0/6.0d0*dt*mesh%sliprate1
+        mesh%slip2  = mesh%mslip2+0.5d0*dt*mesh%sliprate2
+        mesh%tslip2 = mesh%mslip2+1.0d0/6.0d0*dt*mesh%sliprate2
         ! rate state
         mesh%state  = mesh%mstate+0.5d0*dt*mesh%hstate
         mesh%tstate = mesh%mstate+1.0d0/6.0d0*dt*mesh%hstate
@@ -274,8 +278,10 @@ do it = 1,nt
         u  = mu+0.5d0*dt*hu
         tu = tu+1.0d0/3.0d0*dt*hu
 
-        mesh%slip  = mesh%mslip+0.5d0*dt*mesh%sliprate
-        mesh%tslip = mesh%tslip+1.0d0/3.0d0*dt*mesh%sliprate
+        mesh%slip1  = mesh%mslip1+0.5d0*dt*mesh%sliprate1
+        mesh%tslip1 = mesh%tslip1+1.0d0/3.0d0*dt*mesh%sliprate1
+        mesh%slip2  = mesh%mslip2+0.5d0*dt*mesh%sliprate2
+        mesh%tslip2 = mesh%tslip2+1.0d0/3.0d0*dt*mesh%sliprate2
         ! rate state
         mesh%state  = mesh%mstate+0.5d0*dt*mesh%hstate
         mesh%tstate = mesh%tstate+1.0d0/3.0d0*dt*mesh%hstate
@@ -283,15 +289,18 @@ do it = 1,nt
         u  = mu+1.0d0*dt*hu
         tu = tu+1.0d0/3.0d0*dt*hu
 
-        mesh%slip  = mesh%mslip+1.0d0*dt*mesh%sliprate
-        mesh%tslip = mesh%tslip+1.0d0/3.0d0*dt*mesh%sliprate
+        mesh%slip1  = mesh%mslip1+1.0d0*dt*mesh%sliprate1
+        mesh%tslip1 = mesh%tslip1+1.0d0/3.0d0*dt*mesh%sliprate1
+        mesh%slip2  = mesh%mslip2+1.0d0*dt*mesh%sliprate2
+        mesh%tslip2 = mesh%tslip2+1.0d0/3.0d0*dt*mesh%sliprate2
         ! rate state
         mesh%state  = mesh%mstate+1.0d0*dt*mesh%hstate
         mesh%tstate = mesh%tstate+1.0d0/3.0d0*dt*mesh%hstate
       elseif(irk==4)then
         u  = tu+1.0d0/6.0d0*dt*hu
 
-        mesh%slip  = mesh%tslip+1.0d0/6.0d0*dt*mesh%sliprate
+        mesh%slip1 = mesh%tslip1+1.0d0/6.0d0*dt*mesh%sliprate1
+        mesh%slip2 = mesh%tslip2+1.0d0/6.0d0*dt*mesh%sliprate2
         ! rate state
         mesh%state  = mesh%tstate+1.0d0/6.0d0*dt*mesh%hstate
       endif
@@ -301,8 +310,10 @@ do it = 1,nt
       tu = rk4a(irk)*tu + dt*hu
       u = u + rk4b(irk)*tu
 
-      mesh%tslip = rk4a(irk)*mesh%tslip + dt*mesh%sliprate
-      mesh%slip = mesh%slip + rk4b(irk)*mesh%tslip
+      mesh%tslip1 = rk4a(irk)*mesh%tslip1 + dt*mesh%sliprate1
+      mesh%slip1 = mesh%slip1 + rk4b(irk)*mesh%tslip1
+      mesh%tslip2 = rk4a(irk)*mesh%tslip2 + dt*mesh%sliprate2
+      mesh%slip2 = mesh%slip2 + rk4b(irk)*mesh%tslip2
       ! rate state
       mesh%tstate = rk4a(irk)*mesh%tstate + dt*mesh%hstate
       mesh%state = mesh%state + rk4b(irk)*mesh%tstate
@@ -311,8 +322,10 @@ do it = 1,nt
       tu = rk3a(irk)*tu + dt*hu
       u = u + rk3b(irk)*tu
 
-      mesh%tslip = rk3a(irk)*mesh%tslip + dt*mesh%sliprate
-      mesh%slip = mesh%slip + rk3b(irk)*mesh%tslip
+      mesh%tslip1 = rk3a(irk)*mesh%tslip1 + dt*mesh%sliprate1
+      mesh%slip1 = mesh%slip1 + rk3b(irk)*mesh%tslip1
+      mesh%tslip2 = rk3a(irk)*mesh%tslip2 + dt*mesh%sliprate2
+      mesh%slip2 = mesh%slip2 + rk3b(irk)*mesh%tslip2
       ! rate state
       mesh%tstate = rk3a(irk)*mesh%tstate + dt*mesh%hstate
       mesh%state = mesh%state + rk3b(irk)*mesh%tstate
@@ -321,13 +334,17 @@ do it = 1,nt
       tu = rk2a(irk)*tu + dt*hu
       u = u + rk2b(irk)*tu
 
-      mesh%tslip = rk2a(irk)*mesh%tslip + dt*mesh%sliprate
-      mesh%slip = mesh%slip + rk2b(irk)*mesh%tslip
+      mesh%tslip1 = rk2a(irk)*mesh%tslip1 + dt*mesh%sliprate1
+      mesh%slip1 = mesh%slip1 + rk2b(irk)*mesh%tslip1
+      mesh%tslip2 = rk2a(irk)*mesh%tslip2 + dt*mesh%sliprate2
+      mesh%slip2 = mesh%slip2 + rk2b(irk)*mesh%tslip2
       ! rate state
       mesh%tstate = rk2a(irk)*mesh%tstate + dt*mesh%hstate
       mesh%state = mesh%state + rk2b(irk)*mesh%tstate
 
     end if
+
+    mesh%slip = sqrt(mesh%slip1**2+mesh%slip2**2)
 
     !if (mod(it-1,grdsurf_snap_skip) == 0) then
     !  call grdsurf_io_save(mesh,u,displ,(it-1)/grdsurf_snap_skip+1)

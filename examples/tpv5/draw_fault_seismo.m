@@ -12,7 +12,7 @@ data_dir = 'data';
 
 varnm = 'rate';
 %varnm = 'slip';
-%varnm = 'stress';
+%varnm = 'tau';
 %varnm = 'sigma';
 
 x0 = 0; % on the fault surface

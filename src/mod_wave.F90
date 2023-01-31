@@ -892,6 +892,8 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
     !        (fstar(2)+fL(2)+tau0m)**2+ &
     !        (fstar(3)+fL(3)+tau0l)**2)
     !mesh%sigma(i,is,ief) = tau0n + fstar(1) + fL(1)
+    mesh%stress1(i,is,ief) = Tm_hat_m+tau0m
+    mesh%stress2(i,is,ief) = Tl_hat_m+tau0l
     mesh%stress(i,is,ief) = sqrt( &
             (Tm_hat_m+tau0m)**2+ &
             (Tl_hat_m+tau0l)**2)
