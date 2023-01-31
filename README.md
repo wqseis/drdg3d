@@ -26,7 +26,7 @@ After installing requirements, the program is installed as follows.
 ```bash
 > git clone https://github.com/wqseis/drdg3d.git
 > cd drdg3d
-> mkdir bin obj
+> mkdir -p bin obj
 > make
 ```
 

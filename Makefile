@@ -113,9 +113,11 @@ OBJS_SOLVER := $(foreach file,$(SRC_SOLVER),$(OBJDIR)/$(file:.F90=.o))
 
 .PHONY: all
 
-all: solver tool
+all: dir solver tool
 
 # Target
+dir:
+	mkdir -p bin obj
 solver: $(EXE)
 tool: $(EXE1) $(EXE2)
 
