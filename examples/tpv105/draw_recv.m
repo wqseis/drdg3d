@@ -3,20 +3,24 @@ clear
 %close all
 addmypath
 
-coord = [0 0 -1.5e-16];
-coord = [3 0 0];
 bc = BC_FAULT;
-bc = BC_FREE;
-varnm = 'rate';
-varnm = 'Vz';
+coord = [0,-9,-7.5];
+varnm = 'state';
+
+% bc = BC_FREE;
+% coord = [-6 -12 0];
+% varnm = 'Vz';
 
 par = ReadYaml('parameters.yaml');
 nproc = par.nproc;
 data_dir = par.data_dir;
 
 [ t, v, coord1 ] = extract_seismo( data_dir, nproc, coord, bc, varnm );
+%v = -v;
+u = cumtrapz(t,v);
 
 figure
-plot(t,v)
+plot(t,v);
+%xlim([0 15])
 title(varnm)
 xlabel('Time (sec)')

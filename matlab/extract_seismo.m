@@ -7,35 +7,50 @@ ridx = 0;
 mpi_id = 0;
 for i = 0:nproc-1
     fnm = [data_dir, '/recv_mpi',num2str(i,'%06d'),'.nc'];
+    %disp(fnm)
     if(exist(fnm,'file'))
+        %disp(fnm)
         c = ncread(fnm,'coord');
         %[~,nr] = size(c);
         
-        r = sqrt((c(1,:)-coord(1)).^2+...
+        r = sqrt(...
+            (c(1,:)-coord(1)).^2+...
             (c(2,:)-coord(2)).^2+...
-            (c(3,:)-coord(3)).^2);
+            (c(3,:)-coord(3)).^2 );
         [val,idx] = min(r(:));
-    end
-    if(val<rmin)
-        rmin = val;
-        ridx = idx;
-        mpi_id = i;
-        
+
+        if(val<rmin)
+            rmin = val;
+            ridx = idx;
+            mpi_id = i;
+        end
     end
 end
 
-fnm = ['data/recv_mpi',num2str(mpi_id,'%06d'),'.nc'];
+fnm = [data_dir, '/recv_mpi',num2str(mpi_id,'%06d'),'.nc'];
 
 if bc == BC_FAULT
     switch varnm
-        case 'rate'
+        case 'ratem'
             ivar = 1;
-        case 'stress';
+        case 'ratel'
             ivar = 2;
-        case 'sigma';
+        case 'taum'
             ivar = 3;
-        case 'slip';
+        case 'taul'
             ivar = 4;
+        case 'sigma'
+            ivar = 5;
+        case 'slipm'
+            ivar = 6;
+        case 'slipl'
+            ivar = 7;
+        case 'state'
+            ivar = 8;
+        case 'TP_T'
+            ivar = 9;
+        case 'TP_P'
+            ivar = 10;
         otherwise
             ivar = 1;
     end

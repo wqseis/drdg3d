@@ -3,7 +3,7 @@
 # in YAML format
 
 # number of processors
-nproc : 8
+nproc : 4
 # simulation time length (in seconds)
 simu_time_max : 15.05
 
@@ -30,10 +30,5 @@ RS_fw : 0.2
 
 thermalpressure : 1
 
-
-#nucleate_y0 : -5.0
-#nucleate_z0 : -10.0
-#nucleate_rcrit : 4.0
-#nucleate_Vrup : 2.4248 # 0.7*Vs
-#TimeForcedRup : 0.5
-
+smooth_load : 1
+smooth_load_time : 1.0

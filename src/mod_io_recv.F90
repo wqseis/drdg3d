@@ -199,17 +199,23 @@ subroutine recv_io_save(mesh,u,it)
         if ( mesh%recv_bctype(n) == BC_FAULT .and. &
             ie == mesh%recv_elem(n) .and. is == mesh%recv_face(n)) then
           ief = mesh%wave2fault(ie)
-          mesh%recv_buffer(:,n,1) = mesh%sliprate(:,is,ief)
-          mesh%recv_buffer(:,n,2) = mesh%stress  (:,is,ief)
-          mesh%recv_buffer(:,n,3) = mesh%sigma   (:,is,ief)
-          mesh%recv_buffer(:,n,4) = mesh%slip    (:,is,ief)
+          mesh%recv_buffer(:,n,1)  = mesh%sliprate1(:,is,ief)
+          mesh%recv_buffer(:,n,2)  = mesh%sliprate2(:,is,ief)
+          mesh%recv_buffer(:,n,3)  = mesh%stress1  (:,is,ief)
+          mesh%recv_buffer(:,n,4)  = mesh%stress2  (:,is,ief)
+          mesh%recv_buffer(:,n,5)  = mesh%sigma    (:,is,ief)
+          mesh%recv_buffer(:,n,6)  = mesh%slip1    (:,is,ief)
+          mesh%recv_buffer(:,n,7)  = mesh%slip2    (:,is,ief)
+          mesh%recv_buffer(:,n,8)  = mesh%state    (:,is,ief)
+          mesh%recv_buffer(:,n,9)  = mesh%TP_T     (:,is,ief)
+          mesh%recv_buffer(:,n,10) = mesh%TP_P     (:,is,ief)
         end if
       end do
     end do
   enddo
 
   do j = 1,mesh%nrecv
-    do i = 1,4
+    do i = 1,10
       val(j,i) = interp_dist( &
       mesh%vx(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
       mesh%vy(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &

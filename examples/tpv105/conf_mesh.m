@@ -12,9 +12,9 @@ fnm_out = 'mesh.nc';
 tet_id = 24;
 faultsurf_id = [17];
 freesurf_id = 20;
-tet_id = 24;
-faultsurf_id = [23];
-freesurf_id = 22;
+% tet_id = 24;
+% faultsurf_id = [23];
+% freesurf_id = 22;
 
 msh = build_mesh(fnm_in,tet_id,faultsurf_id,freesurf_id);
 

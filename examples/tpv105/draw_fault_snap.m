@@ -11,7 +11,7 @@ data_dir = par.data_dir;
 varnm = 'rate';
 %varnm = 'slip';
 %varnm = 'sigma';
-varnm = 'stress';
+%varnm = 'tau';
 %varnm = 'state';
 %varnm = 'TP_P'
 
