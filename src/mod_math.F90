@@ -25,12 +25,12 @@ module mod_math
 
 contains
 
-!function norm3(a)
-!  real(kind=RKIND) :: a(3)
-!  real(kind=RKIND) :: norm3
-!  !norm3=dsqrt(a(1)**2+a(2)**2+a(3)**2)
-!  norm3=sqrt(a(1)**2+a(2)**2+a(3)**2)
-!end
+function norm3(a)
+  real(kind=RKIND) :: a(3)
+  real(kind=RKIND) :: norm3
+  !norm3=dsqrt(a(1)**2+a(2)**2+a(3)**2)
+  norm3=sqrt(a(1)**2+a(2)**2+a(3)**2)
+end
 
 function cross(a, b)
   implicit none

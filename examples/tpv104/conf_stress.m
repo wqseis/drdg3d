@@ -110,7 +110,7 @@ for ief = 1:nfault_elem
                     1.001*(-tn)*mu_s1+C01)-ts)+ts;
 
                 ts0 = ts;
-                ts_vec_amp = ts + Fr * 45;
+                ts_vec_amp = ts + Fr * 0;
 
                 ts_vec = ts_vec_amp * ts_vec_one;
                 ts=norm(ts_vec);
@@ -123,6 +123,16 @@ for ief = 1:nfault_elem
                 Tx(i,is,ief) = traction0(1);
                 Ty(i,is,ief) = traction0(2);
                 Tz(i,is,ief) = traction0(3);
+
+                ts_vec_amp = Fr * 45;
+                ts_vec_one = ts_vec/max(ts,1e-9);
+                ts_vec = ts_vec_amp * ts_vec_one;
+                ts=norm(ts_vec);
+                traction0 = ts_vec+0*vec_n;
+
+                dTx(i,is,ief) = traction0(1);
+                dTy(i,is,ief) = traction0(2);
+                dTz(i,is,ief) = traction0(3);
 
                 mu_s(i,is,ief) = mu_s1;
                 mu_d(i,is,ief) = mu_d1;

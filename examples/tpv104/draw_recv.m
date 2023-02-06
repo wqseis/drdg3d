@@ -3,12 +3,14 @@ clear
 %close all
 addmypath
 
-coord = [0 0 -1.5e-16];
-coord = [3 0 0];
+coord = [0 0 -7.5];
+varnm = 'ratem';
 bc = BC_FAULT;
-bc = BC_FREE;
-varnm = 'rate';
-varnm = 'Vz';
+
+
+% bc = BC_FREE;
+% coord = [6 12 0];
+% varnm = 'Vy';
 
 par = ReadYaml('parameters.yaml');
 nproc = par.nproc;

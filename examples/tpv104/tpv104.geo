@@ -2,6 +2,7 @@
 SetFactory("OpenCASCADE");
 
 point_size = 1/Sqrt(3)*2/4;
+point_size = 0.75;
 
 Point(1) = {0, -20,   0, point_size};
 Point(2) = {0,  20,   0, point_size};

@@ -3,9 +3,9 @@
 # in YAML format
 
 # number of processors
-nproc : 128
+nproc : 4
 # simulation time length (in seconds)
-simu_time_max : 15.05
+simu_time_max : 12.01
 
 # CFL number (<0.5)
 cfl_number : 0.5
@@ -16,8 +16,8 @@ mesh_dir : data
 data_dir : data
 
 # snapshot output: skip every N steps
-fault_snap_skip   : 50
-grdsurf_snap_skip : 50
+fault_snap_skip   : 10
+grdsurf_snap_skip : 10
 
 # export ground surface displacement
 export_grdsurf_displ : 1
@@ -28,9 +28,6 @@ RS_V0 : 1.0e-6
 RS_f0 : 0.6
 RS_fw : 0.2
 
-#nucleate_y0 : -5.0
-#nucleate_z0 : -10.0
-#nucleate_rcrit : 4.0
-#nucleate_Vrup : 2.4248 # 0.7*Vs
-#TimeForcedRup : 0.5
+smooth_load : 1
+smooth_load_time : 1.0
 

@@ -27,6 +27,7 @@ module mod_init_fault
                          mesh_dir
   use mod_types,  only : meshvar
   use mod_rotate, only : rotate_xyz2nml
+  use mod_interp, only : tri_interp
   use netcdf
 
   implicit none
@@ -296,64 +297,64 @@ subroutine fault_init_external(mesh)
           p(3)=mesh%vz(mesh%vmapM(i,is,ie))
 
           c=mu_s(1:3,is,ief)
-          cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
           mesh%mu_s(i,is,ief)=cp
 
           c=mu_d(1:3,is,ief)
-          cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
           mesh%mu_d(i,is,ief)=cp
 
           c=Dc(1:3,is,ief)
-          cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
           mesh%Dc(i,is,ief)=cp
 
           c=C0(1:3,is,ief)
-          cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
           mesh%C0(i,is,ief)=cp
 
           c=Tx0(1:3,is,ief)
-          Tx=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          Tx=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           c=Ty0(1:3,is,ief)
-          Ty=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          Ty=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           c=Tz0(1:3,is,ief)
-          Tz=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          Tz=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           c=dTx0(1:3,is,ief)
-          dTx=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          dTx=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           c=dTy0(1:3,is,ief)
-          dTy=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          dTy=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           c=dTz0(1:3,is,ief)
-          dTz=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+          dTz=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
 
           if (friction_law == 1 .or. &
               friction_law == 2 .or. &
               friction_law == 3) then
             ! rate state
             c=a(1:3,is,ief)
-            cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+            cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
             mesh%a(i,is,ief)=cp
 
             c=b(1:3,is,ief)
-            cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+            cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
             mesh%b(i,is,ief)=cp
 
             c=state(1:3,is,ief)
-            cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+            cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
             mesh%state(i,is,ief)=cp
 
             if (friction_law == 3) then
               c=Vw(1:3,is,ief)
-              cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+              cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
               mesh%Vw(i,is,ief)=cp
             end if
 
             if (thermalpressure == 1) then
               c=TP_hy(1:3,is,ief)
-              cp=tri_interp_dist(v1,v2,v3,c(1),c(2),c(3),p)
+              cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
               mesh%TP_hy(i,is,ief)=cp
             end if
 
@@ -398,26 +399,5 @@ subroutine fault_init_external(mesh)
   ! thermal pressurization
   deallocate(TP_hy)
 end subroutine
-
-function tri_interp_dist(v1,v2,v3,c1,c2,c3,p) result (cp)
-  implicit none
-
-  real(kind=rkind),dimension(3) :: v1,v2,v3
-  real(kind=rkind) :: c1,c2,c3,cp
-  real(kind=rkind),dimension(3) :: p
-  real(kind=rkind) :: r1,r2,r3
-  real(kind=rkind) :: w1,w2,w3
-
-  r1=sqrt((p(1)-v1(1))**2+(p(2)-v1(2))**2+(p(3)-v1(3))**2)
-  r2=sqrt((p(1)-v2(1))**2+(p(2)-v2(2))**2+(p(3)-v2(3))**2)
-  r3=sqrt((p(1)-v3(1))**2+(p(2)-v3(2))**2+(p(3)-v3(3))**2)
-
-  w1=1d0/(r1+1d-300)
-  w2=1d0/(r2+1d-300)
-  w3=1d0/(r3+1d-300)
-
-  cp=(w1*c1+w2*c2+w3*c3)/(w1+w2+w3)
-
-end function
 
 end module

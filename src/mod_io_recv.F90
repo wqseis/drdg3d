@@ -21,11 +21,13 @@ module mod_io_recv
 
   use mod_para,  only : RKIND,           &
                         Nfp, Nfaces,     &
+                        NGLL,            &
                         BC_FREE,         &
                         BC_FAULT,        &
                         MAX_NUM_RECV,    &
                         data_dir
   use mod_types, only : meshvar
+  use mod_interp, only: tri_interp
   use netcdf
 
   implicit none
@@ -144,6 +146,8 @@ subroutine recv_io_save(mesh,u,it)
   integer :: i, j, ie, ief, is, it, ierr, n
   !integer,dimension(3) :: start,cnt,stride
   !real(kind=rkind) :: val(MAX_NUM_RECV,10)
+  real(kind=rkind),dimension(3) :: v1,v2,v3,p
+  real(kind=rkind) :: c1,c2,c3
   if (mesh%nrecv==0) return
 
   !i = 0
@@ -196,7 +200,7 @@ subroutine recv_io_save(mesh,u,it)
           mesh%recv_buffer(:,n,2) = u(mesh%vmapM(:,is,ie),2)/mesh%rho(ie)
           mesh%recv_buffer(:,n,3) = u(mesh%vmapM(:,is,ie),3)/mesh%rho(ie)
         end if
-        if ( mesh%recv_bctype(n) == BC_FAULT .and. &
+        if ( mesh%recv_bctype(n) >= BC_FAULT .and. &
             ie == mesh%recv_elem(n) .and. is == mesh%recv_face(n)) then
           ief = mesh%wave2fault(ie)
           mesh%recv_buffer(:,n,1)  = mesh%sliprate1(:,is,ief)
@@ -216,15 +220,38 @@ subroutine recv_io_save(mesh,u,it)
 
   do j = 1,mesh%nrecv
     do i = 1,10
-      val(j,i) = interp_dist( &
-      mesh%vx(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
-      mesh%vy(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
-      mesh%vz(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
-      mesh%recv_buffer(:,j,i), &
-      Nfp, &
-      mesh%recv_coord(1,j), &
-      mesh%recv_coord(2,j), &
-      mesh%recv_coord(3,j) )
+      v1=(/ &
+          mesh%vx(mesh%vmapM(1,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vy(mesh%vmapM(1,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vz(mesh%vmapM(1,mesh%recv_face(j),mesh%recv_elem(j))) /)
+      v2=(/ &
+          mesh%vx(mesh%vmapM(NGLL,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vy(mesh%vmapM(NGLL,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vz(mesh%vmapM(NGLL,mesh%recv_face(j),mesh%recv_elem(j))) /)
+      v3=(/ &
+          mesh%vx(mesh%vmapM(Nfp,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vy(mesh%vmapM(Nfp,mesh%recv_face(j),mesh%recv_elem(j))), &
+          mesh%vz(mesh%vmapM(Nfp,mesh%recv_face(j),mesh%recv_elem(j))) /)
+
+      c1 = mesh%recv_buffer(1   ,j,i)
+      c2 = mesh%recv_buffer(NGLL,j,i)
+      c3 = mesh%recv_buffer(Nfp ,j,i)
+
+      p = (/ &
+          mesh%recv_coord(1,j), &
+          mesh%recv_coord(2,j), &
+          mesh%recv_coord(3,j) /)
+
+      val(j,i) = tri_interp(v1,v2,v3,c1,c2,c3,p)
+      !val(j,i) = interp_dist( &
+      !mesh%vx(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
+      !mesh%vy(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
+      !mesh%vz(mesh%vmapM(:,mesh%recv_face(j),mesh%recv_elem(j))), &
+      !mesh%recv_buffer(:,j,i), &
+      !Nfp, &
+      !mesh%recv_coord(1,j), &
+      !mesh%recv_coord(2,j), &
+      !mesh%recv_coord(3,j) )
     end do
   end do
 
@@ -255,38 +282,5 @@ subroutine recv_io_end(mesh)
   call check2(ierr,'nf90_close recv')
 
 end subroutine
-
-function interp_dist(x,y,z,v,n,x1,y1,z1) result (v1)
-  implicit none
-
-  integer :: n,i
-  real(kind=rkind),dimension(n) :: x,y,z,v
-  real(kind=rkind) :: x1,y1,z1,v1
-  real(kind=rkind) :: r1!,r2,r3
-  real(kind=rkind) :: w1!,w2,w3,
-  real(kind=rkind) :: wsum,vsum
-
-  !r1=sqrt((p(1)-v1(1))**2+(p(2)-v1(2))**2+(p(3)-v1(3))**2)
-  !r2=sqrt((p(1)-v2(1))**2+(p(2)-v2(2))**2+(p(3)-v2(3))**2)
-  !r3=sqrt((p(1)-v3(1))**2+(p(2)-v3(2))**2+(p(3)-v3(3))**2)
-  !
-  !w1=1d0/(r1+1d-300)
-  !w2=1d0/(r2+1d-300)
-  !w3=1d0/(r3+1d-300)
-  !
-  !cp=(w1*c1+w2*c2+w3*c3)/(w1+w2+w3)
-
-  vsum=0.
-  wsum=0.
-  do i = 1,n
-    r1=sqrt((x(i)-x1)**2+(y(i)-y1)**2+(z(i)-z1)**2)
-    w1=1d0/(r1+1d-30)
-    vsum=vsum+w1*v(i)
-    wsum=wsum+w1
-  end do
-
-  v1=vsum/wsum
-
-end function
 
 end module

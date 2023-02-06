@@ -82,6 +82,7 @@ SRC_SOLVER :=               \
        mod_mpi.F90          \
        mod_vtk.F90          \
        mod_math.F90         \
+       mod_interp.F90       \
        mod_read.F90         \
        mod_matrix.F90       \
        mod_nodes.F90        \

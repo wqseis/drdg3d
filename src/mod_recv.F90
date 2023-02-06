@@ -25,7 +25,7 @@ module mod_recv
                        BC_FAULT,      &
                        Nfp,           &
                        Nfaces
-  use mod_math, only : cross
+  use mod_math, only : cross, norm3
   use mod_mesh, only : meshvar
 
   implicit none
@@ -44,10 +44,20 @@ subroutine locate_recvs(mesh)
   integer :: fid
 
   real(kind=rkind),dimension(3) :: v1,v2,v3,v4,p
-  real(kind=rkind),dimension(3,MAX_NUM_RECV) :: recv_coord
-  real(kind=rkind),dimension(3,MAX_NUM_RECV) :: recv_coord_loc
+  !real(kind=rkind),dimension(3,MAX_NUM_RECV) :: recv_coord
+  !real(kind=rkind),dimension(3,MAX_NUM_RECV) :: recv_coord_loc
+  !integer,dimension(MAX_NUM_RECV) :: recv_bctype, recv_elem, recv_face
 
-  integer,dimension(MAX_NUM_RECV) :: recv_bctype, recv_elem, recv_face
+  real(kind=rkind),allocatable,dimension(:,:) :: recv_coord
+  real(kind=rkind),allocatable,dimension(:,:) :: recv_coord_loc
+  integer,allocatable,dimension(:) :: recv_bctype, recv_elem, recv_face
+  !integer :: bc
+
+  allocate(recv_coord    (3,MAX_NUM_RECV))
+  allocate(recv_coord_loc(3,MAX_NUM_RECV))
+  allocate(recv_bctype(MAX_NUM_RECV))
+  allocate(recv_elem  (MAX_NUM_RECV))
+  allocate(recv_face  (MAX_NUM_RECV))
 
   myrank = mesh%rank
 
@@ -82,39 +92,60 @@ subroutine locate_recvs(mesh)
 
   nr = 0
 
-  do ir = 1,n!mesh%nrecv
-    do ie = 1,mesh%nelem
-      v1=mesh%coord(:,mesh%elem(1,ie))
-      v2=mesh%coord(:,mesh%elem(2,ie))
-      v3=mesh%coord(:,mesh%elem(3,ie))
-      v4=mesh%coord(:,mesh%elem(4,ie))
-      p = recv_coord(:,ir)
-      if(PointInTet(v1,v2,v3,v4,p)) then
-        nr=nr+1
-        do is = 1,Nfaces
-          if(mesh%bctype(is,ie) >= BC_FAULT) then
-            !print*,'rank=',myrank,'recv elem=',ie,'face=',is, 'coord=', &
-            !sngl(mesh%vx(mesh%vmapM(:,is,ie))),&
-            !sngl(mesh%vy(mesh%vmapM(:,is,ie))),&
-            !sngl(mesh%vz(mesh%vmapM(:,is,ie)))
-            recv_elem(nr) = ie
-            recv_face(nr) = is
-            recv_coord_loc(:,nr) = p
-            recv_bctype(nr) = BC_FAULT
-          end if
-          if(mesh%bctype(is,ie) == BC_FREE) then
-            !print*,'rank=',myrank,'recv elem=',ie,'face=',is, 'coord=', &
-            !sngl(mesh%vx(mesh%vmapM(:,is,ie))),&
-            !sngl(mesh%vy(mesh%vmapM(:,is,ie))),&
-            !sngl(mesh%vz(mesh%vmapM(:,is,ie)))
-            recv_elem(nr) = ie
-            recv_face(nr) = is
-            recv_coord_loc(:,nr) = p
-            recv_bctype(nr) = BC_FREE
-          end if
-        end do
-      end if
-    end do
+  ! search for fault recvs
+  do ir = 1,n
+    if (recv_bctype(ir) >= BC_FAULT) then
+      do ie = 1,mesh%nelem
+        v1=mesh%coord(:,mesh%elem(1,ie))
+        v2=mesh%coord(:,mesh%elem(2,ie))
+        v3=mesh%coord(:,mesh%elem(3,ie))
+        v4=mesh%coord(:,mesh%elem(4,ie))
+        p = recv_coord(:,ir)
+        if(PointInTet(v1,v2,v3,v4,p)) then
+          do is = 1,Nfaces
+            if(mesh%bctype(is,ie) >= BC_FAULT) then
+              nr=nr+1
+              print*,'bc=',mesh%bctype(is,ie),'p=',sngl(p),'xyz-p=', &
+              sngl(sum(mesh%vx(mesh%vmapM(:,is,ie)))/Nfp-1*p(1)),&
+              sngl(sum(mesh%vy(mesh%vmapM(:,is,ie)))/Nfp-1*p(2)),&
+              sngl(sum(mesh%vz(mesh%vmapM(:,is,ie)))/Nfp-1*p(3))
+              recv_elem(nr) = ie
+              recv_face(nr) = is
+              recv_coord_loc(:,nr) = p
+              recv_bctype(nr) = mesh%bctype(is,ie)
+            end if
+          end do
+        end if
+      end do
+    end if
+  end do
+
+  ! search for free recvs
+  do ir = 1,n
+    if (recv_bctype(ir) == BC_FREE) then
+      do ie = 1,mesh%nelem
+        v1=mesh%coord(:,mesh%elem(1,ie))
+        v2=mesh%coord(:,mesh%elem(2,ie))
+        v3=mesh%coord(:,mesh%elem(3,ie))
+        v4=mesh%coord(:,mesh%elem(4,ie))
+        p = recv_coord(:,ir)
+        if(PointInTet(v1,v2,v3,v4,p)) then
+          do is = 1,Nfaces
+            if(mesh%bctype(is,ie) == BC_FREE) then
+              nr=nr+1
+              !print*,'rank=',myrank,'recv elem=',ie,'face=',is, 'coord=', &
+              !sngl(mesh%vx(mesh%vmapM(:,is,ie))),&
+              !sngl(mesh%vy(mesh%vmapM(:,is,ie))),&
+              !sngl(mesh%vz(mesh%vmapM(:,is,ie)))
+              recv_elem(nr) = ie
+              recv_face(nr) = is
+              recv_coord_loc(:,nr) = p
+              recv_bctype(nr) = BC_FREE
+            end if
+          end do
+        end if
+      end do
+    end if
   end do
 
   mesh%nrecv = nr
@@ -131,10 +162,13 @@ subroutine locate_recvs(mesh)
     mesh%recv_buffer = 0.
   end if
 
-
-
   print*,'rank = ',myrank,'nrecv = ',mesh%nrecv
 
+  deallocate(recv_coord)
+  deallocate(recv_coord_loc)
+  deallocate(recv_bctype)
+  deallocate(recv_elem)
+  deallocate(recv_face)
 
 end subroutine
 
@@ -149,6 +183,10 @@ function PointInTet(v1,v2,v3,v4,p)
   real(kind=RKIND),dimension(3) :: v1,v2,v3,v4,p
   real(kind=RKIND) :: c1,c2,c3,c4
 
+  real*8 :: tol
+
+  tol = 1e-5 * norm3(v1-v2)
+
   PointInTet = .False.
 
   call barycentricPointInTet(v1,v2,v3,v4,p,c1,c2,c3,c4)
@@ -156,6 +194,24 @@ function PointInTet(v1,v2,v3,v4,p)
   if(c1>=0.0 .and. c2>=0.0 .and. c3>=0.0 .and. c4>=0.0) then
     PointInTet = .True.
   end if
+
+  if (dabs(c1)<tol .and. &
+      c2 >= 0 .and. c3>=0 .and. c4>=0) then
+    PointInTet = .True.
+  end if
+  if (dabs(c2)<tol .and. &
+      c1 >= 0 .and. c3>=0 .and. c4>=0) then
+    PointInTet = .True.
+  end if
+  if (dabs(c3)<tol .and. &
+      c1 >= 0 .and. c2>=0 .and. c4>=0) then
+    PointInTet = .True.
+  end if
+  if (dabs(c4)<tol .and. &
+      c1 >= 0 .and. c2>=0 .and. c3>=0) then
+    PointInTet = .True.
+  end if
+
 
 end function
 
