@@ -103,12 +103,12 @@ nice_print = .true.
 
 call read_parameters()
 
-call get_command_argument(1,data_dir)
-if (len_trim(data_dir)==0) then
-  data_dir = 'data'
-end if
-if(myrank==0) &
-write(*,'(a,a)') 'data_dir = ',trim(data_dir)
+!call get_command_argument(1,data_dir)
+!if (len_trim(data_dir)==0) then
+!  data_dir = 'data'
+!end if
+!if(myrank==0) &
+!write(*,'(a,a)') 'data_dir = ',trim(data_dir)
 
 call sync_print()
 
