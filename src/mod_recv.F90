@@ -51,7 +51,7 @@ subroutine locate_recvs(mesh)
   real(kind=rkind),allocatable,dimension(:,:) :: recv_coord
   real(kind=rkind),allocatable,dimension(:,:) :: recv_coord_loc
   real(kind=rkind),allocatable,dimension(:,:) :: recv_normal
-  integer,allocatable,dimension(:) :: recv_bctype, recv_elem, recv_face
+  integer,allocatable,dimension(:) :: recv_bctype, recv_bctype_loc, recv_elem, recv_face
   integer,allocatable,dimension(:) :: recv_id
   !integer :: bc
 
@@ -59,6 +59,7 @@ subroutine locate_recvs(mesh)
   allocate(recv_coord_loc(3,MAX_NUM_RECV))
   allocate(recv_normal   (3,MAX_NUM_RECV))
   allocate(recv_bctype(MAX_NUM_RECV))
+  allocate(recv_bctype_loc(MAX_NUM_RECV))
   allocate(recv_elem  (MAX_NUM_RECV))
   allocate(recv_face  (MAX_NUM_RECV))
   allocate(recv_id    (MAX_NUM_RECV))
@@ -116,7 +117,7 @@ subroutine locate_recvs(mesh)
               recv_elem(nr) = ie
               recv_face(nr) = is
               recv_coord_loc(:,nr) = p
-              recv_bctype(nr) = mesh%bctype(is,ie)
+              recv_bctype_loc(nr) = mesh%bctype(is,ie)
               recv_id(nr) = ir
               recv_normal(1,nr) = mesh%nx(is*Nfp,ie)
               recv_normal(2,nr) = mesh%ny(is*Nfp,ie)
@@ -148,7 +149,7 @@ subroutine locate_recvs(mesh)
               recv_elem(nr) = ie
               recv_face(nr) = is
               recv_coord_loc(:,nr) = p
-              recv_bctype(nr) = BC_FREE
+              recv_bctype_loc(nr) = BC_FREE
               recv_id(nr) = ir
               recv_normal(1,nr) = mesh%nx(is*Nfp,ie)
               recv_normal(2,nr) = mesh%ny(is*Nfp,ie)
@@ -170,7 +171,7 @@ subroutine locate_recvs(mesh)
     allocate(mesh%recv_normal(1:3,1:mesh%nrecv))
     allocate(mesh%recv_buffer(Nfp,mesh%nrecv,10))
     mesh%recv_id = recv_id(1:mesh%nrecv)
-    mesh%recv_bctype = recv_bctype(1:mesh%nrecv)
+    mesh%recv_bctype = recv_bctype_loc(1:mesh%nrecv)
     mesh%recv_elem = recv_elem(1:mesh%nrecv)
     mesh%recv_face = recv_face(1:mesh%nrecv)
     mesh%recv_coord = recv_coord_loc(:,1:mesh%nrecv)
@@ -183,8 +184,11 @@ subroutine locate_recvs(mesh)
   deallocate(recv_coord)
   deallocate(recv_coord_loc)
   deallocate(recv_bctype)
+  deallocate(recv_bctype_loc)
   deallocate(recv_elem)
   deallocate(recv_face)
+  deallocate(recv_id)
+  deallocate(recv_normal)
 
 end subroutine
 
