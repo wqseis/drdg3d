@@ -12,7 +12,7 @@ for i = 0:nproc-1
     fnm = [data_dir, '/recv_mpi',num2str(i,'%06d'),'.nc'];
     %disp(fnm)
     if(exist(fnm,'file'))
-        %disp(fnm)
+        disp(fnm)
         id = ncread(fnm,'id');
         nor = ncread(fnm,'normal');
         ndotn = zeros(size(id));
@@ -85,4 +85,9 @@ end
 
 v = ncread(fnm,'var',[ridx,ivar,1],[1,nvar,Inf]);
 v = squeeze(v);
+if (bc == BC_FREE)
+    for i = 1:3
+        v(i+3,:) = cumtrapz(t,v(i,:));
+    end
+end
 end

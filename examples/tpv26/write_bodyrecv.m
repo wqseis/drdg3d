@@ -10,7 +10,7 @@ addmypath
 %bc = BC_FREE;
 %coord = [-body strike dip];
 
-for id = 10:15;
+for id = 13:30
 
 par = ReadYaml('parameters.yaml');
 nproc = par.nproc;
@@ -32,6 +32,9 @@ v(4,:) = -v(4,:);
 v(3,:) = -v(3,:);
 v(6,:) = -v(6,:);
 
+idx = find(t<12);
+t = t(idx);
+v = v(:,idx);
 
 if 0
 figure
@@ -59,10 +62,11 @@ else
 end
 fmt = ['body',fmt1,'st',fmt2,'dp',fmt3];
 fnm = sprintf(fmt,body*10,strike*10,dip*10);
+
 fid = fopen(fnm,'wt');
-fprintf(fid,'# problem = TPV104\n');
+fprintf(fid,'# problem = TPV27\n');
 fprintf(fid,'# author = Wenqiang Zhang\n');
-fprintf(fid,'# date = 2023/02/04\n');
+fprintf(fid,'# date = 2023/02/07\n');
 fprintf(fid,'# code = DRDG3D\n');
 fprintf(fid,'# code_version = 0.0\n');
 fprintf(fid,'# element_size = 200 m on fault, O4\n');
@@ -84,4 +88,5 @@ v = v([5,2,6,3,4,1],:);
 dat = [t,v'];
 fprintf(fid,'%20.12e %14.6e %14.6e %14.6e %14.6e %14.6e %14.6e\n',dat');
 fclose(fid);
+
 end
