@@ -2,7 +2,7 @@
 SetFactory("OpenCASCADE");
 
 s = 1.0/2/Sqrt(3.0)*2.0;
-s = 0.5;
+s = 0.2;
 
 Point(1) = {0, -16, 0, s};
 Point(2) = {0, -16, -15, s};
@@ -51,4 +51,4 @@ Box(1) = {-100, -100, -120, 200, 200, 120};
 //+
 BooleanFragments{ Volume{1}; Delete; }{ Surface{1}; Surface{2}; Delete; }
 //+
-MeshSize {15, 13, 14, 16, 19, 20, 17, 18} = 20/Sqrt(3)*2;
+MeshSize {15, 13, 14, 16, 19, 20, 17, 18} = 10/Sqrt(3)*2;
