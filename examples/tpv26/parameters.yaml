@@ -5,7 +5,7 @@
 # number of processors
 nproc : 4
 # simulation time length (in seconds)
-simu_time_max : 15.05
+simu_time_max : 20.01
 
 # CFL number (<0.5)
 cfl_number : 0.5

@@ -105,10 +105,10 @@ subroutine locate_recvs(mesh)
           do is = 1,Nfaces
             if(mesh%bctype(is,ie) >= BC_FAULT) then
               nr=nr+1
-              print*,'bc=',mesh%bctype(is,ie),'p=',sngl(p),'xyz-p=', &
-              sngl(sum(mesh%vx(mesh%vmapM(:,is,ie)))/Nfp-1*p(1)),&
-              sngl(sum(mesh%vy(mesh%vmapM(:,is,ie)))/Nfp-1*p(2)),&
-              sngl(sum(mesh%vz(mesh%vmapM(:,is,ie)))/Nfp-1*p(3))
+              !print*,'bc=',mesh%bctype(is,ie),'p=',sngl(p),'xyz-p=', &
+              !sngl(sum(mesh%vx(mesh%vmapM(:,is,ie)))/Nfp-1*p(1)),&
+              !sngl(sum(mesh%vy(mesh%vmapM(:,is,ie)))/Nfp-1*p(2)),&
+              !sngl(sum(mesh%vz(mesh%vmapM(:,is,ie)))/Nfp-1*p(3))
               recv_elem(nr) = ie
               recv_face(nr) = is
               recv_coord_loc(:,nr) = p
