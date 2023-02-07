@@ -30,8 +30,8 @@ axis equal
 end
 
 %%
-fid = fopen('cplot_tpv27.txt','wt');
-fprintf(fid,'# problem = TPV27\n');
+fid = fopen('cplot_tpv26.txt','wt');
+fprintf(fid,'# problem = TPV26\n');
 fprintf(fid,'# author = Wenqiang Zhang\n');
 fprintf(fid,'# date = 2023/02/07\n');
 fprintf(fid,'# code = DRDG3D\n');

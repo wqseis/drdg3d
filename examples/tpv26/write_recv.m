@@ -23,9 +23,11 @@ v = v(1:7,:);
 strike = coord(2);
 dip = -coord(3);
 
+if 1
 idx = find(t<12);
 t = t(idx);
 v = v(:,idx);
+end
 
 if (strike>-1e-6)
     fmt1='%03d';
@@ -40,7 +42,7 @@ end
 fmt = ['faultst',fmt1,'dp',fmt2];
 fnm = sprintf(fmt,strike*10,dip*10);
 fid = fopen(fnm,'wt');
-fprintf(fid,'# problem = TPV27\n');
+fprintf(fid,'# problem = TPV26\n');
 fprintf(fid,'# author = Wenqiang Zhang\n');
 fprintf(fid,'# date = 2023/02/07\n');
 fprintf(fid,'# code = DRDG3D\n');
