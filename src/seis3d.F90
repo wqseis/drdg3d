@@ -31,7 +31,6 @@ use mod_para,       only : CUSTOM_REAL,           &
                            grdsurf_snap_skip,     &
                            thermalpressure,       &
                            plasticity,            &
-                           data_dir,              &
                            nice_print,            &
                            rk2a, rk2b,            &
                            rk3a, rk3b,            &

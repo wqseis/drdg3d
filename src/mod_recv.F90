@@ -50,14 +50,18 @@ subroutine locate_recvs(mesh)
 
   real(kind=rkind),allocatable,dimension(:,:) :: recv_coord
   real(kind=rkind),allocatable,dimension(:,:) :: recv_coord_loc
+  real(kind=rkind),allocatable,dimension(:,:) :: recv_normal
   integer,allocatable,dimension(:) :: recv_bctype, recv_elem, recv_face
+  integer,allocatable,dimension(:) :: recv_id
   !integer :: bc
 
   allocate(recv_coord    (3,MAX_NUM_RECV))
   allocate(recv_coord_loc(3,MAX_NUM_RECV))
+  allocate(recv_normal   (3,MAX_NUM_RECV))
   allocate(recv_bctype(MAX_NUM_RECV))
   allocate(recv_elem  (MAX_NUM_RECV))
   allocate(recv_face  (MAX_NUM_RECV))
+  allocate(recv_id    (MAX_NUM_RECV))
 
   myrank = mesh%rank
 
@@ -113,6 +117,10 @@ subroutine locate_recvs(mesh)
               recv_face(nr) = is
               recv_coord_loc(:,nr) = p
               recv_bctype(nr) = mesh%bctype(is,ie)
+              recv_id(nr) = ir
+              recv_normal(1,nr) = mesh%nx(is*Nfp,ie)
+              recv_normal(2,nr) = mesh%ny(is*Nfp,ie)
+              recv_normal(3,nr) = mesh%nz(is*Nfp,ie)
             end if
           end do
         end if
@@ -141,6 +149,10 @@ subroutine locate_recvs(mesh)
               recv_face(nr) = is
               recv_coord_loc(:,nr) = p
               recv_bctype(nr) = BC_FREE
+              recv_id(nr) = ir
+              recv_normal(1,nr) = mesh%nx(is*Nfp,ie)
+              recv_normal(2,nr) = mesh%ny(is*Nfp,ie)
+              recv_normal(3,nr) = mesh%nz(is*Nfp,ie)
             end if
           end do
         end if
@@ -150,15 +162,19 @@ subroutine locate_recvs(mesh)
 
   mesh%nrecv = nr
   if (mesh%nrecv>0) then
+    allocate(mesh%recv_id(1:mesh%nrecv))
     allocate(mesh%recv_bctype(1:mesh%nrecv))
     allocate(mesh%recv_elem(1:mesh%nrecv))
     allocate(mesh%recv_face(1:mesh%nrecv))
     allocate(mesh%recv_coord(1:3,1:mesh%nrecv))
+    allocate(mesh%recv_normal(1:3,1:mesh%nrecv))
     allocate(mesh%recv_buffer(Nfp,mesh%nrecv,10))
+    mesh%recv_id = recv_id(1:mesh%nrecv)
     mesh%recv_bctype = recv_bctype(1:mesh%nrecv)
     mesh%recv_elem = recv_elem(1:mesh%nrecv)
     mesh%recv_face = recv_face(1:mesh%nrecv)
     mesh%recv_coord = recv_coord_loc(:,1:mesh%nrecv)
+    mesh%recv_normal = recv_normal(:,1:mesh%nrecv)
     mesh%recv_buffer = 0.
   end if
 

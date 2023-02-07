@@ -81,10 +81,6 @@ subroutine recv_io_init(mesh)
   myrank = mesh%rank
 
   write(filename,'(a,a,i6.6,a)') trim(data_dir),'/recv_mpi',myrank,'.nc'
-  !print*,filename
-  !allocate(x(Nfp,mesh%nfree_face))
-  !allocate(y(Nfp,mesh%nfree_face))
-  !allocate(z(Nfp,mesh%nfree_face))
 
   ! start to create
   ierr = nf90_create(filename, NF90_CLOBBER, recv_ncid)
@@ -101,41 +97,34 @@ subroutine recv_io_init(mesh)
   call check2(ierr,'def_dim 10')
 
   ! define variables
-  ierr = nf90_def_var(recv_ncid, "coord" , NF90_DOUBLE, (/dimid(3),dimid(1)/), varid(1))
-  call check2(ierr,'def_var coord')
-  ierr = nf90_def_var(recv_ncid, "bctype" , NF90_INT, dimid(1), varid(2))
+  ierr = nf90_def_var(recv_ncid, "id", NF90_INT, dimid(1), varid(1))
+  call check2(ierr,'def_var recv_id')
+  ierr = nf90_def_var(recv_ncid, "bctype", NF90_INT, dimid(1), varid(2))
   call check2(ierr,'def_var bctype')
+  ierr = nf90_def_var(recv_ncid, "coord", NF90_DOUBLE, (/dimid(3),dimid(1)/), varid(3))
+  call check2(ierr,'def_var coord')
+  ierr = nf90_def_var(recv_ncid, "normal", NF90_DOUBLE, (/dimid(3),dimid(1)/), varid(4))
+  call check2(ierr,'def_var normal')
 
   ierr = nf90_def_var(recv_ncid, "time", NF90_DOUBLE, dimid(2), recv_varid(1))
   call check2(ierr,'def_var time')
   ierr = nf90_def_var(recv_ncid, "var", NF90_FLOAT, (/dimid(1),dimid(4),dimid(2)/), recv_varid(2))
   call check2(ierr,'def_var vars')
-  !ierr = nf90_def_var(recv_ncid, "sliprate", NF90_FLOAT, dimid(1:2), recv_varid(2))
-  !call check2(ierr,'def_var sliprate')
-  !ierr = nf90_def_var(recv_ncid, "stress", NF90_FLOAT, dimid(1:2), recv_varid(3))
-  !call check2(ierr,'def_var stress')
-  !ierr = nf90_def_var(recv_ncid, "sigma", NF90_FLOAT, dimid(1:2), recv_varid(4))
-  !call check2(ierr,'def_var sigma')
-  !ierr = nf90_def_var(recv_ncid, "slip", NF90_FLOAT, dimid(1:2), recv_varid(5))
-  !call check2(ierr,'def_var slip')
 
   ! end of define
   ierr = nf90_enddef(recv_ncid)
   call check2(ierr,'enddef')
 
   ! put variables
-  ierr = nf90_put_var(recv_ncid, varid(1), mesh%recv_coord)
-  call check2(ierr,'put_var recv_coord')
+  ierr = nf90_put_var(recv_ncid, varid(1), mesh%recv_id)
+  call check2(ierr,'put_var recv_id')
   ierr = nf90_put_var(recv_ncid, varid(2), mesh%recv_bctype)
   call check2(ierr,'put_var recv_bctype')
-  !ierr = nf90_put_var(recv_ncid, varid(2), y)
-  !call check2(ierr,'put_var y')
-  !ierr = nf90_put_var(recv_ncid, varid(3), z)
-  !call check2(ierr,'put_var z')
+  ierr = nf90_put_var(recv_ncid, varid(3), mesh%recv_coord)
+  call check2(ierr,'put_var recv_coord')
+  ierr = nf90_put_var(recv_ncid, varid(4), mesh%recv_normal)
+  call check2(ierr,'put_var recv_normal')
 
-  !!!ierr = nf90_close(recv_ncid)
-  !deallocate(x,y,z)
-  !deallocate(vars)
   allocate(val(mesh%nrecv,10))
 end subroutine
 
@@ -149,44 +138,6 @@ subroutine recv_io_save(mesh,u,it)
   real(kind=rkind),dimension(3) :: v1,v2,v3,p
   real(kind=rkind) :: c1,c2,c3
   if (mesh%nrecv==0) return
-
-  !i = 0
-  !do ie = 1,mesh%nelem
-  !  do is = 1,Nfaces
-  !    if ( mesh%bctype(is,ie) == BC_FREE) then
-  !      i = i + 1
-  !      Vx(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),1)/mesh%rho(ie) )
-  !      Vy(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),2)/mesh%rho(ie) )
-  !      Vz(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),3)/mesh%rho(ie) )
-  !      exx(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),4))
-  !      eyy(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),5))
-  !      ezz(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),6))
-  !      eyz(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),4))
-  !      exz(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),5))
-  !      exy(1:Nfp,i) = sngl(u(mesh%vmapM(1:Nfp,is,ie),6))
-  !      Ux(1:Nfp,i) = sngl(displ(mesh%vmapM(1:Nfp,is,ie),1)/mesh%rho(ie) )
-  !      Uy(1:Nfp,i) = sngl(displ(mesh%vmapM(1:Nfp,is,ie),2)/mesh%rho(ie) )
-  !      Uz(1:Nfp,i) = sngl(displ(mesh%vmapM(1:Nfp,is,ie),3)/mesh%rho(ie) )
-  !    endif
-  !  enddo
-  !enddo
-  ! PGV
-  !do i = 1,Nfp
-  !  do j = 1,mesh%nfree_face
-  !    PGVx(i,j) = max(PGVx(i,j),abs(Vx(i,j)))
-  !    PGVy(i,j) = max(PGVy(i,j),abs(Vy(i,j)))
-  !    PGVz(i,j) = max(PGVz(i,j),abs(Vz(i,j)))
-  !  enddo
-  !end do
-
-  !start=(/1,1,it+0/); cnt=(/Nfp,mesh%nfree_face,1/); stride=(/1,1,1/)
-  !ierr = nf90_put_var(recv_ncid,recv_varid(1),Vx,start,cnt,stride)
-  !call check2(ierr,'put_var Vx')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(2),Vy,start,cnt,stride)
-  !call check2(ierr,'put_var Vy')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(3),Vz,start,cnt,stride)
-  !call check2(ierr,'put_var Vz')
-
 
   ierr = nf90_put_var(recv_ncid,recv_varid(1),(/mesh%current_time/),(/it/),(/1/),(/1/))
   call check2(ierr,'put_var time')
@@ -257,16 +208,9 @@ subroutine recv_io_save(mesh,u,it)
 
   !val(1) = mesh%recv_buffer(1,1,1)
 
-  ierr = nf90_put_var(recv_ncid,recv_varid(2),(/sngl(val(1:mesh%nrecv,1:10))/),(/1,1,it/),(/mesh%nrecv,10,1/),(/1,1/))
+  ierr = nf90_put_var(recv_ncid,recv_varid(2), &
+      (/sngl(val(1:mesh%nrecv,1:10))/),(/1,1,it/),(/mesh%nrecv,10,1/),(/1,1/))
   call check2(ierr,'put_var vars')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(2),(/sngl(val(1:mesh%nrecv,1))/),(/1,it/),(/mesh%nrecv,1/),(/1,1/))
-  !call check2(ierr,'put_var sliprate')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(3),(/sngl(val(1:mesh%nrecv,2))/),(/1,it/),(/mesh%nrecv,1/),(/1,1/))
-  !call check2(ierr,'put_var stress')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(4),(/sngl(val(1:mesh%nrecv,3))/),(/1,it/),(/mesh%nrecv,1/),(/1,1/))
-  !call check2(ierr,'put_var sigma')
-  !ierr = nf90_put_var(recv_ncid,recv_varid(5),(/sngl(val(1:mesh%nrecv,4))/),(/1,it/),(/mesh%nrecv,1/),(/1,1/))
-  !call check2(ierr,'put_var slip')
 
   ierr = nf90_sync(recv_ncid)
 
@@ -280,6 +224,8 @@ subroutine recv_io_end(mesh)
 
   ierr = nf90_close(recv_ncid)
   call check2(ierr,'nf90_close recv')
+
+  if(allocated(val)) deallocate(val)
 
 end subroutine
 

@@ -210,10 +210,12 @@ module mod_types
   !@  real(kind=rkind),dimension(:),pointer :: body_recv_refx => null()
   !@  real(kind=rkind),dimension(:),pointer :: body_recv_refy => null()
     ! recvs
+    integer,dimension(:),pointer :: recv_id => null()
     integer,dimension(:),pointer :: recv_bctype => null()
     integer,dimension(:),pointer :: recv_elem => null()
     integer,dimension(:),pointer :: recv_face => null()
     real(kind=rkind),dimension(:,:),pointer :: recv_coord => null()
+    real(kind=rkind),dimension(:,:),pointer :: recv_normal => null()
     real(kind=rkind),dimension(:,:,:),pointer :: recv_buffer => null()
 
   end type
