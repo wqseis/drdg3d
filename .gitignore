@@ -14,5 +14,6 @@ fault*.nc
 grdsurf*.nc
 recv*.nc
 data/
+data_*/
 *.tmp
 path.*
