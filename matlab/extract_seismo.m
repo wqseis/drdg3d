@@ -29,7 +29,7 @@ end
 
 fnm = [data_dir, '/recv_mpi',num2str(mpi_id,'%06d'),'.nc'];
 
-if bc == BC_FAULT
+if bc >= BC_FAULT
     switch varnm
         case 'ratem'
             ivar = 1;

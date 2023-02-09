@@ -40,7 +40,7 @@ normal = ncread(fnm,'normal',[1,ridx],[3,1]);
 
 nvar = 1;
 
-if bc == BC_FAULT
+if bc >= BC_FAULT
     switch varnm
         case 'ratem'
             ivar = 1;

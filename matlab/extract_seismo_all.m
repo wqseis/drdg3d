@@ -29,8 +29,6 @@ end
 
 fnm = [data_dir, '/recv_mpi',num2str(mpi_id,'%06d'),'.nc'];
 
-%if bc == BC_FAULT
-
 t = ncread(fnm,'time');
 v = ncread(fnm,'var',[ridx,1,1],[1,Inf,Inf]);
 %bc = ncread(fnm,'bctype');
@@ -39,7 +37,7 @@ coord1 = ncread(fnm,'coord',[1,ridx],[3,1]);
 %v1 = v(1,1,:);
 v = squeeze(v);
 
-if (bc == BC_FAULT)
+if (bc >= BC_FAULT)
 %v = v([6,1,3,7,2,4,5,8,9,10],:);
 end
 if (bc == BC_FREE)
