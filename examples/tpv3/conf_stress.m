@@ -52,18 +52,12 @@ stress0_bak = [-120,0,0;
 stress0_asp = [-120,0,0;
     -81.60 0 0;
     0 0 0];
-stress0_high = [-120,0,0;
-    -78 0 0;
-    0 0 0];
-stress0_low = [-120,0,0;
-    -62 0 0;
-    0 0 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for ief = 1:nfault_elem
     ie = fault2wave(ief);
     for is = 1:4
-        if (bctype(is,ie)==BC_FAULT)
+        if (bctype(is,ie)>=BC_FAULT)
             xc = mean(node(1,elem(FtoV(is,:),ie)));
             yc = mean(node(2,elem(FtoV(is,:),ie)));
             zc = mean(node(3,elem(FtoV(is,:),ie)));
@@ -78,7 +72,7 @@ for ief = 1:nfault_elem
 
                 traction0 = stress0_bak * vec_n;
                 asp_size = 1.5;
-                if(abs(y-0)<asp_size && abs(z-0)<asp_size)
+                if(abs(y-0)<=asp_size && abs(z-0)<=asp_size)
                     traction0 = stress0_asp * vec_n;
                 end
 

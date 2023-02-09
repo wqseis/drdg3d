@@ -46,6 +46,84 @@ subroutine check2(status,msg)
   end if
 end subroutine
 
+subroutine fault_init_tpv3(mesh)
+  implicit none
+  type(meshvar) :: mesh
+  real(rkind) :: x,y,z,xc,yc,zc,asp_size
+  integer :: is,ie,ief,i,j!,k
+  integer :: myrank
+  real(rkind) :: sxx,syy,szz,sxy,sxz,syz
+  real(rkind) :: vec_n(3),vec_m(3),vec_l(3),Tx,Ty,Tz,Tn,Tm,Tl
+  real(rkind) :: depth
+
+  myrank = mesh%rank
+  ! ------------------------------------------------------------
+  ! stress and friction initialization 
+
+  do ief = 1,mesh%nfault_elem
+    ie = mesh%fault2wave(ief)
+    do is = 1,Nfaces
+      if(mesh%bctype(is,ie) >= BC_FAULT) then
+        xc = sum(mesh%vx(mesh%vmapM(:,is,ie)))/dble(Nfp)
+        yc = sum(mesh%vy(mesh%vmapM(:,is,ie)))/dble(Nfp)
+        zc = sum(mesh%vz(mesh%vmapM(:,is,ie)))/dble(Nfp)
+        do i = 1,Nfp
+          j = i+(is-1)*Nfp
+          x = mesh%vx(mesh%vmapM(i,is,ie))
+          y = mesh%vy(mesh%vmapM(i,is,ie))
+          z = mesh%vz(mesh%vmapM(i,is,ie))
+
+          depth = abs(z)
+
+          vec_n = (/mesh%nx(j,ie),mesh%ny(j,ie),mesh%nz(j,ie)/)
+          vec_m = (/mesh%mx(j,ie),mesh%my(j,ie),mesh%mz(j,ie)/)
+          vec_l = (/mesh%lx(j,ie),mesh%ly(j,ie),mesh%lz(j,ie)/)
+
+          mesh%mu_s (i,is,ief) = 0.677
+          mesh%mu_d (i,is,ief) = 0.525
+          mesh%Dc   (i,is,ief) = 0.4
+          mesh%C0   (i,is,ief) = 0.0e0
+
+          sxx = -120e0
+          syy = 0
+          szz = 0
+          sxy = -70e0
+          sxz = 0
+          syz = 0
+
+          asp_size = 1.5e0
+          if ( abs(yc-0)<=asp_size .and. abs(zc-0)<=asp_size ) then
+            sxy = -81.6e0
+          end if
+
+          Tx = sxx*vec_n(1)+sxy*vec_n(2)+sxz*vec_n(3)
+          Ty = sxy*vec_n(1)+syy*vec_n(2)+syz*vec_n(3)
+          Tz = sxz*vec_n(1)+syz*vec_n(2)+szz*vec_n(3)
+          call rotate_xyz2nml(vec_n,vec_m,vec_l,Tx,Ty,Tz,Tn,Tm,Tl)
+
+          mesh%tau0n(i,is,ief) = Tn
+          mesh%tau0m(i,is,ief) = Tm
+          mesh%tau0l(i,is,ief) = Tl
+          mesh%dtau0n(i,is,ief) = 0
+          mesh%dtau0m(i,is,ief) = 0
+          mesh%dtau0l(i,is,ief) = 0
+
+          ! write initial stress
+          mesh%stress1(i,is,ief) = Tm+0
+          mesh%stress2(i,is,ief) = Tl+0
+          mesh%stress(i,is,ief) = sqrt((Tm+0)**2+(Tl+0)**2)
+          mesh%sigma (i,is,ief) = Tn+0
+
+        enddo
+      else
+        mesh%mu_s(:,is,ief) = 1e4
+        mesh%C0  (:,is,ief) = 1e9
+      endif
+    enddo
+  enddo
+
+end subroutine
+
 ! subroutine fault_init_tpv5(mesh)
 !   implicit none
 !   type(meshvar) :: mesh

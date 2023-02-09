@@ -45,6 +45,7 @@ use mod_types,      only : meshvar,               &
 use mod_mesh,       only : readMeshVar
 use mod_geometry,   only : build_geometry
 use mod_wave,       only : rhs,                   &
+                           update_info,           &
                            init_wave,             &
                            write_wave_vtk
 use mod_plastic,    only : update_plastic
@@ -362,6 +363,8 @@ do it = 1,nt
 
   if(plasticity==1) &
   call update_plastic(mesh,u)
+
+  call update_info(mesh)
 
   ! thermal pressurization
   if(thermalpressure==1) &

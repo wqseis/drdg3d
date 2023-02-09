@@ -861,9 +861,13 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
       !print*,vv
       !mesh%sliprate(i,is,ie) = abs(vv)!abs(V_p-V_m)
     mesh%sliprate(i,is,ief) = sqrt(vv1**2+vv2**2) !abs(V_p-V_m)
-    if (mesh%sliprate(i,is,ief) > 1e-3 .and. mesh%ruptime(i,is,ief) < 0) then
-        mesh%ruptime(i,is,ief) = mesh%current_time
-    end if
+    !if (mesh%sliprate(i,is,ief) > 1e-3 .and. mesh%ruptime(i,is,ief) < 0) then
+    !    mesh%ruptime(i,is,ief) = mesh%current_time
+    !end if
+
+    !if (mesh%peakrate(i,is,ief) < mesh%sliprate(i,is,ief)) then
+    !    mesh%peakrate(i,is,ief) = mesh%sliprate(i,is,ief)
+    !end if
 
     ! f (sxx,sxy,vx,0,vy)
     ! F=(Sxx,Sxy,Sxz,Vx,0,0,0,Vz,Vy)
@@ -988,6 +992,7 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
 
   !fstar = 0
 end subroutine
+
 
 subroutine time_weakening(y,z,y0,z0,rcrit,Vr,t0,cur_time,slip,Dc,mu_s,mu_d,mu_f)
   implicit none
@@ -1452,6 +1457,29 @@ end subroutine
 !  close(100)
 !
 !end subroutine
+
+subroutine update_info(mesh)
+  implicit none
+  type(meshvar) :: mesh
+  integer :: ie,ief,is,i
+
+  do ief = 1,mesh%nfault_elem
+    ie = mesh%fault2wave(ief)
+    do is = 1,4
+      if (mesh%bctype(is,ie) >= BC_FAULT) then
+        do i = 1,Nfp
+          if (mesh%sliprate(i,is,ief) > 1e-3 .and. mesh%ruptime(i,is,ief) < 0) then
+            mesh%ruptime(i,is,ief) = mesh%current_time
+          end if
+
+          if (mesh%peakrate(i,is,ief) < mesh%sliprate(i,is,ief)) then
+            mesh%peakrate(i,is,ief) = mesh%sliprate(i,is,ief)
+          end if
+        end do
+      end if
+    end do
+  end do
+end subroutine
 
 function Gt_func(t,rise_time) result (g)
   real(kind=RKIND) :: g

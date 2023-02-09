@@ -173,6 +173,8 @@ subroutine fault_io_init(mesh)
   call check2(ierr,'def_var fault_id')
   ierr = nf90_def_var(fault_ncid, "ruptime", NF90_DOUBLE, dimid(1:2), fault_varid(4))
   call check2(ierr,'def_var ruptime')
+  ierr = nf90_def_var(fault_ncid, "peakrate", NF90_DOUBLE, dimid(1:2), fault_varid(16))
+  call check2(ierr,'def_var peakrate')
 
   ierr = nf90_def_var(fault_ncid, "time" , NF90_DOUBLE, dimid(3), fault_varid(8))
   call check2(ierr,'def_var time')
@@ -262,7 +264,7 @@ subroutine fault_io_save(mesh,it)
   implicit none
   type(meshvar) :: mesh
   integer :: i, ie, ief, is, it, ierr
-  real,allocatable,dimension(:,:) :: rate,stress,sigma,ruptime,rate1,rate2,slip
+  real,allocatable,dimension(:,:) :: rate,stress,sigma,ruptime,rate1,rate2,slip,peakrate
   real,allocatable,dimension(:,:) :: stress1,stress2
   real,allocatable,dimension(:,:) :: slip1,slip2
   ! rate state
@@ -282,6 +284,7 @@ subroutine fault_io_save(mesh,it)
   allocate(stress2(Nfp,mesh%nfault_face))
   allocate(sigma  (Nfp,mesh%nfault_face))
   allocate(ruptime(Nfp,mesh%nfault_face))
+  allocate(peakrate(Nfp,mesh%nfault_face))
   ! rate state
   allocate(state(Nfp,mesh%nfault_face))
   ! thermal pressurization
@@ -306,6 +309,7 @@ subroutine fault_io_save(mesh,it)
         slip1  (1:Nfp,i) = sngl(mesh%slip1    (1:Nfp,is,ief))
         slip2  (1:Nfp,i) = sngl(mesh%slip2    (1:Nfp,is,ief))
         ruptime(1:Nfp,i) = sngl(mesh%ruptime  (1:Nfp,is,ief))
+        peakrate(1:Nfp,i) = sngl(mesh%peakrate(1:Nfp,is,ief))
         ! rate state
         state(1:Nfp,i) = sngl(mesh%state(1:Nfp,is,ief))
         ! thermal pressurization
@@ -324,6 +328,8 @@ subroutine fault_io_save(mesh,it)
   call check2(ierr,'put_var sigma')
   ierr = nf90_put_var(fault_ncid,fault_varid(4),ruptime)
   call check2(ierr,'put_var ruptime')
+  ierr = nf90_put_var(fault_ncid,fault_varid(16),peakrate)
+  call check2(ierr,'put_var peakrate')
   ierr = nf90_put_var(fault_ncid,fault_varid(5),rate1,start,cnt,stride)
   call check2(ierr,'put_var ratem')
   ierr = nf90_put_var(fault_ncid,fault_varid(6),rate2,start,cnt,stride)
@@ -357,6 +363,7 @@ subroutine fault_io_save(mesh,it)
   deallocate(rate1,rate2)
   deallocate(state)
   deallocate(TP_T,TP_P)
+  deallocate(peakrate)
 end subroutine
 
 subroutine fault_io_end(mesh)

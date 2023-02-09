@@ -20,9 +20,11 @@
 module mod_fault
   use mod_para,       only : RKIND,             &
                              Np, Nfp, Nfaces,   &
+                             problem,           &
                              BC_FREE, BC_FAULT
   use mod_types,      only : meshvar
-  use mod_init_fault, only : fault_init_external
+  use mod_init_fault, only : fault_init_external, &
+                             fault_init_tpv3
   !use mod_rotate,     only : rotate_xyz2nml
 
   implicit none
@@ -161,6 +163,7 @@ subroutine fault_init(mesh)
   allocate(mesh%Dc      (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%C0      (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%ruptime (Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%peakrate(Nfp,Nfaces,mesh%nfault_elem))
 
   ! rate state
   allocate(mesh%a    (Nfp,Nfaces,mesh%nfault_elem))
@@ -190,10 +193,17 @@ subroutine fault_init(mesh)
   mesh%sliprate2(:,:,:) = 0
 
   mesh%ruptime(:,:,:) = -1
+  mesh%peakrate(:,:,:) = 0
 
 
   !call fault_init_tpv5(mesh)
   call fault_init_external(mesh)
+
+  if (&
+      trim(adjustl(problem)) .eq. 'tpv3' .or. &
+      trim(adjustl(problem)) .eq. 'TPV3' ) then
+    call fault_init_tpv3(mesh)
+  end if
 
   ! ------------------------------------------------------------
 

@@ -113,6 +113,7 @@ module mod_types
     real(kind=rkind),dimension(:,:,:),pointer :: Dc => null()
     real(kind=rkind),dimension(:,:,:),pointer :: C0 => null()
     real(kind=rkind),dimension(:,:,:),pointer :: ruptime => null()
+    real(kind=rkind),dimension(:,:,:),pointer :: peakrate => null()
 
     ! rate state
     real(kind=rkind),dimension(:,:,:),pointer :: a => null()

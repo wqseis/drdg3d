@@ -12,6 +12,8 @@ fnm_out = 'mesh.nc';
 tet_id = 24;
 faultsurf_id = [17];
 freesurf_id = [];
+tet_id = 29;
+faultsurf_id = [21,22];
 msh = build_mesh(fnm_in,tet_id,faultsurf_id,freesurf_id);
 
 %% write mesh.nc

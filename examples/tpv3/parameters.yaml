@@ -2,10 +2,12 @@
 # configure file for dynamic rupture simulations 
 # in YAML format
 
+problem : tpv3
+
 # number of processors
 nproc : 4
 # simulation time length (in seconds)
-simu_time_max : 15
+simu_time_max : 12
 
 # CFL number (<0.5)
 cfl_number : 0.5
