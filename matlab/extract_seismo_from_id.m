@@ -85,7 +85,7 @@ end
 
 v = ncread(fnm,'var',[ridx,ivar,1],[1,nvar,Inf]);
 v = squeeze(v);
-if (bc == BC_FREE)
+if (bc == BC_FREE && strcmp(varnm,'all'))
     for i = 1:3
         v(i+3,:) = cumtrapz(t,v(i,:));
     end
