@@ -2,6 +2,8 @@
 # configure file for dynamic rupture simulations 
 # in YAML format
 
+problem : tpv5
+
 # number of processors
 nproc : 4
 # simulation time length (in seconds)

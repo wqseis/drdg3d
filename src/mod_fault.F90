@@ -201,7 +201,9 @@ subroutine fault_init(mesh)
 
   if (&
       trim(adjustl(problem)) .eq. 'tpv3' .or. &
-      trim(adjustl(problem)) .eq. 'TPV3' ) then
+      trim(adjustl(problem)) .eq. 'TPV3' .or. &
+      trim(adjustl(problem)) .eq. 'tpv5' .or. &
+      trim(adjustl(problem)) .eq. 'TPV5' ) then
     call fault_init_tpv3(mesh)
   end if
 

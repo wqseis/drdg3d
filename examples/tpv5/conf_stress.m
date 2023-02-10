@@ -63,7 +63,7 @@ stress0_low = [-120,0,0;
 for ief = 1:nfault_elem
     ie = fault2wave(ief);
     for is = 1:4
-        if (bctype(is,ie)==BC_FAULT)
+        if (bctype(is,ie)>=BC_FAULT)
             xc = mean(node(1,elem(FtoV(is,:),ie)));
             yc = mean(node(2,elem(FtoV(is,:),ie)));
             zc = mean(node(3,elem(FtoV(is,:),ie)));

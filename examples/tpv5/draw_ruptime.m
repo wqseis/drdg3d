@@ -16,7 +16,7 @@ nx = gather_fault_var( data_dir, nproc, 'nx' );
 t = gather_fault_var( data_dir, nproc, 'ruptime' );
 fault_id = gather_fault_var1d( data_dir, nproc, 'fault_id' );
 
-idx = find(mean(nx(:,:))>0 & fault_id == 1);
+idx = find(mean(nx(:,:))>0 );
 x = x(:,idx);
 y = y(:,idx);
 z = z(:,idx);

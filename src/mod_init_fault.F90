@@ -22,6 +22,7 @@ module mod_init_fault
   use mod_para,   only : RKIND,           &
                          Nfp, Np, Nfaces, &
                          BC_FAULT,        &
+                         problem,         &
                          friction_law,    &
                          thermalpressure, &
                          mesh_dir
@@ -91,9 +92,31 @@ subroutine fault_init_tpv3(mesh)
           sxz = 0
           syz = 0
 
-          asp_size = 1.5e0
-          if ( abs(yc-0)<=asp_size .and. abs(zc-0)<=asp_size ) then
-            sxy = -81.6e0
+          if (&
+              trim(adjustl(problem)) .eq. 'tpv3' .or. &
+              trim(adjustl(problem)) .eq. 'TPV3' ) then
+            asp_size = 1.5e0
+            if ( abs(yc-0)<=asp_size .and. abs(zc-0)<=asp_size ) then
+              sxy = -81.6e0
+            end if
+          end if
+
+          if (&
+              trim(adjustl(problem)) .eq. 'tpv5' .or. &
+              trim(adjustl(problem)) .eq. 'TPV5' ) then
+            ! rectangle aspersity
+            asp_size = 1.5e0
+            if ( abs(yc-0e0)<=asp_size .and. abs(zc+7.5e0)<=asp_size ) then
+              sxy = -81.6e0
+            end if
+            ! lower asperity in the right
+            if ( abs(yc-7.5e0)<=asp_size .and. abs(zc+7.5e0)<=asp_size ) then
+              sxy = -62e0
+            end if
+            ! higher asperity in the left
+            if ( abs(yc+7.5e0)<=asp_size .and. abs(zc+7.5e0)<=asp_size ) then
+              sxy = -78e0
+            end if
           end if
 
           Tx = sxx*vec_n(1)+sxy*vec_n(2)+sxz*vec_n(3)
