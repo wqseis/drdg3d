@@ -158,7 +158,7 @@ for ief = 1:nfault_elem
                 Tx(i,is,ief) = traction0(1);
                 Ty(i,is,ief) = traction0(2);
                 Tz(i,is,ief) = traction0(3);
-               
+
                 mu_s(i,is,ief) = mu_s1;
                 mu_d(i,is,ief) = mu_d1;
                 Dc(i,is,ief) = Dc1;
@@ -208,6 +208,7 @@ netcdf.putVar(ncid,var10,Vw);
 netcdf.putVar(ncid,var11,state);
 netcdf.putVar(ncid,var12,TP_hy);
 
+netcdf.close(ncid);
 
 %% checking ...
 % The following code is not necessary, but useful for checking 

@@ -45,7 +45,7 @@ for ie = 1:nelem
     end
 end
 toc
-% 
+%
 % disp('assigning fault triangulates ...')
 % tic
 % tri_fault = zeros(num_fault_face,3);
@@ -88,7 +88,7 @@ stress0_asp = rotate_tensor(vec_n0,vec_m0,vec_l0,vec_x0,vec_y0,vec_z0,stress0_as
 for ie = 1:nelem
     ief = wave2fault(ie);
     for is = 1:4
-        if (bctype(is,ie)==BC_FAULT)
+        if (bctype(is,ie)>=BC_FAULT)
             xc = mean(node(1,elem(FtoV(is,:),ie)));
             yc = mean(node(2,elem(FtoV(is,:),ie)));
             zc = mean(node(3,elem(FtoV(is,:),ie)));
@@ -98,14 +98,13 @@ for ie = 1:nelem
                 x = node(1,elem(j,ie));
                 y = node(2,elem(j,ie));
                 z = node(3,elem(j,ie));
-                
+
                 T1 = stress0_bak;
                 if (abs(yc-0)<=1.5 && ...
                         abs(zc+7.5*sind(dip_angle))<=1.5*sind(dip_angle))
                     T1 = stress0_asp;
                 end
 
-             
                 % Coordinate transforms
                 % rotations of the coordinate system 
 %                 % while the object is held constant. 
@@ -118,17 +117,17 @@ for ie = 1:nelem
 %                  Rot= [ cosa   0   sina;
 %                         0      0    0;
 %                         -sina  1    cosa];
-%                 
+%
 %                 T2=Rot*T1*transpose(Rot);
 
                 vec_n = [nx(is,ie);ny(is,ie);nz(is,ie)];
-                
+
                 % linear 0 to 70 MPa
                 T2 = T1 * (x/(15*cosd(dip_angle)));
                 %T2 = T1;
-                
+
                 traction0 = T2 * vec_n;
-                
+
                 tn=dot(traction0,vec_n);
                 ts_vec=traction0-tn*vec_n;
                 ts=norm(ts_vec);
@@ -172,7 +171,7 @@ for ie = 1:nelem
              else
                  v_dense(k,:) = nan;
              end
-            k = k + 1;                
+            k = k + 1;
         end
     end
 end

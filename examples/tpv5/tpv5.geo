@@ -1,7 +1,7 @@
 // Gmsh project created on Sat Jul 23 16:52:46 2022
 SetFactory("OpenCASCADE");
 
-point_size = 1;///Sqrt(3)*2;
+point_size = 0.6;///Sqrt(3)*2;
 
 Point(1) = {0, -15,   0, point_size};
 Point(2) = {0,  15,   0, point_size};
@@ -47,7 +47,7 @@ BooleanFragments{ Surface{1}; Delete; }{ Surface{2,3,4}; Delete; }
 Box(1) = {-50, -50, -50, 100, 100, 50};
 
 // set size at domain boundary
-MeshSize {17, 18, 19, 20, 21, 22, 23, 24} = 10;
+MeshSize {17, 18, 19, 20, 21, 22, 23, 24} = 20;
 
 BooleanFragments{ Volume{1}; Delete; }{ Surface{2,3,4,5}; Delete; }
 
