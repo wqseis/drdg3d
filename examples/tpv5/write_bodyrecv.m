@@ -4,7 +4,7 @@ clear
 
 addmypath
 
-for id = 15:22
+for id = 17:22
 
 par = ReadYaml('parameters.yaml');
 nproc = par.nproc;
@@ -24,12 +24,6 @@ v(4,:) = -v(4,:);
 % vertical direction
 v(3,:) = -v(3,:);
 v(6,:) = -v(6,:);
-
-if 0
-idx = find(t<12);
-t = t(idx);
-v = v(:,idx);
-end
 
 if 0
 figure
@@ -59,12 +53,12 @@ fmt = ['body',fmt1,'st',fmt2,'dp',fmt3];
 fnm = sprintf(fmt,body*10,strike*10,dip*10);
 
 fid = fopen(fnm,'wt');
-fprintf(fid,'# problem = TPV24\n');
+fprintf(fid,'# problem = TPV5\n');
 fprintf(fid,'# author = Wenqiang Zhang\n');
-fprintf(fid,'# date = 2023/02/18\n');
+fprintf(fid,'# date = 2023/02/13\n');
 fprintf(fid,'# code = DRDG3D\n');
 fprintf(fid,'# code_version = 0.0\n');
-fprintf(fid,'# element_size = 200 m on fault, O6\n');
+fprintf(fid,'# element_size = 100 m on fault, O4\n');
 fprintf(fid,'# time_step = %g\n',t(2)-t(1));
 fprintf(fid,'# num_time_steps = %d\n',length(t));
 fprintf(fid,'# location= 6 km off fault, -12 km along strike, 0 km down-normal\n');

@@ -152,6 +152,7 @@ netcdf.putVar(ncid,var10,Vw);
 netcdf.putVar(ncid,var11,state);
 netcdf.putVar(ncid,var12,TP_hy);
 
+netcdf.close(ncid);
 
 %% checking ...
 % The following code is unnecessary, but useful for checking

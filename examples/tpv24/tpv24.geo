@@ -52,3 +52,6 @@ Box(1) = {-100, -100, -120, 200, 200, 120};
 BooleanFragments{ Volume{1}; Delete; }{ Surface{1}; Surface{2}; Delete; }
 //+
 MeshSize {15, 13, 14, 16, 19, 20, 17, 18} = 10/Sqrt(3)*2;
+
+Mesh.Algorithm = 6; // Frontal-Delaunay for 2D meshes
+//

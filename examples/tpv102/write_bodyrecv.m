@@ -1,15 +1,22 @@
 clc
 clear
 %close all
-
 addmypath
 
-for id = 15:22
+%body =   9;
+%strike =   0;
+%dip = 0;
+%
+%bc = BC_FREE;
+%coord = [-body strike dip];
+
+for id = 10:15;
 
 par = ReadYaml('parameters.yaml');
 nproc = par.nproc;
 data_dir = par.data_dir;
 
+%[ t, v, coord1 ] = extract_seismo_all( data_dir, nproc, coord, bc);
 [ t, v, bc, coord, nor ] = extract_seismo_from_id( ...
     data_dir, nproc, id, 'all', [0 0 1]);
 body = -coord(1);
@@ -25,11 +32,6 @@ v(4,:) = -v(4,:);
 v(3,:) = -v(3,:);
 v(6,:) = -v(6,:);
 
-if 0
-idx = find(t<12);
-t = t(idx);
-v = v(:,idx);
-end
 
 if 0
 figure
@@ -56,15 +58,14 @@ else
     fmt3='%04d';
 end
 fmt = ['body',fmt1,'st',fmt2,'dp',fmt3];
-fnm = sprintf(fmt,body*10,strike*10,dip*10);
-
+fnm = sprintf(fmt,body*10,strike*10,0);
 fid = fopen(fnm,'wt');
-fprintf(fid,'# problem = TPV24\n');
+fprintf(fid,'# problem = TPV102\n');
 fprintf(fid,'# author = Wenqiang Zhang\n');
-fprintf(fid,'# date = 2023/02/18\n');
+fprintf(fid,'# date = 2023/02/13\n');
 fprintf(fid,'# code = DRDG3D\n');
 fprintf(fid,'# code_version = 0.0\n');
-fprintf(fid,'# element_size = 200 m on fault, O6\n');
+fprintf(fid,'# element_size = 200 m on fault, O4\n');
 fprintf(fid,'# time_step = %g\n',t(2)-t(1));
 fprintf(fid,'# num_time_steps = %d\n',length(t));
 fprintf(fid,'# location= 6 km off fault, -12 km along strike, 0 km down-normal\n');
@@ -83,5 +84,4 @@ v = v([5,2,6,3,4,1],:);
 dat = [t,v'];
 fprintf(fid,'%20.12e %14.6e %14.6e %14.6e %14.6e %14.6e %14.6e\n',dat');
 fclose(fid);
-
 end

@@ -24,7 +24,9 @@ module mod_fault
                              BC_FREE, BC_FAULT
   use mod_types,      only : meshvar
   use mod_init_fault, only : fault_init_external, &
-                             fault_init_tpv3
+                             fault_init_tpv3,     &
+                             fault_init_tpv10
+
   !use mod_rotate,     only : rotate_xyz2nml
 
   implicit none
@@ -202,9 +204,25 @@ subroutine fault_init(mesh)
   if (&
       trim(adjustl(problem)) .eq. 'tpv3' .or. &
       trim(adjustl(problem)) .eq. 'TPV3' .or. &
+      trim(adjustl(problem)) .eq. 'tpv6' .or. &
+      trim(adjustl(problem)) .eq. 'TPV6' .or. &
+      trim(adjustl(problem)) .eq. 'tpv7' .or. &
+      trim(adjustl(problem)) .eq. 'TPV7' .or. &
       trim(adjustl(problem)) .eq. 'tpv5' .or. &
       trim(adjustl(problem)) .eq. 'TPV5' ) then
     call fault_init_tpv3(mesh)
+  end if
+
+  if (&
+      trim(adjustl(problem)) .eq. 'tpv10' .or. &
+      trim(adjustl(problem)) .eq. 'TPV10' .or. &
+      trim(adjustl(problem)) .eq. 'tpv11' .or. &
+      trim(adjustl(problem)) .eq. 'TPV11' .or. &
+      trim(adjustl(problem)) .eq. 'tpv12' .or. &
+      trim(adjustl(problem)) .eq. 'TPV12' .or. &
+      trim(adjustl(problem)) .eq. 'tpv13' .or. &
+      trim(adjustl(problem)) .eq. 'TPV13' ) then
+    call fault_init_tpv10(mesh)
   end if
 
   ! ------------------------------------------------------------

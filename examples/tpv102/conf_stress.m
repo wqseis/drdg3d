@@ -110,7 +110,7 @@ for ief = 1:nfault_elem
                     1.001*(-tn)*mu_s1+C01)-ts)+ts;
 
                 ts0 = ts;
-                ts_vec_amp = ts + Fr * 25;
+                ts_vec_amp = ts + Fr * 0;
 
                 ts_vec = ts_vec_amp * ts_vec_one;
                 ts=norm(ts_vec);
@@ -123,6 +123,16 @@ for ief = 1:nfault_elem
                 Tx(i,is,ief) = traction0(1);
                 Ty(i,is,ief) = traction0(2);
                 Tz(i,is,ief) = traction0(3);
+
+                ts_vec_amp = Fr * 25;
+                ts_vec_one = ts_vec/max(ts,1e-9);
+                ts_vec = ts_vec_amp * ts_vec_one;
+                ts=norm(ts_vec);
+                traction0 = ts_vec+0*vec_n;
+
+                dTx(i,is,ief) = traction0(1);
+                dTy(i,is,ief) = traction0(2);
+                dTz(i,is,ief) = traction0(3);
 
                 mu_s(i,is,ief) = mu_s1;
                 mu_d(i,is,ief) = mu_d1;
@@ -150,6 +160,7 @@ for ief = 1:nfault_elem
                 %temp(i,is,ief) = (tp-ts)./(ts-td);
                 temp(i,is,ief) = (ts-td)./((tp-td)+1e-6);
                 temp(i,is,ief) = state1;
+                temp(i,is,ief) = dTy(i,is,ief);
             end
 
         end
@@ -191,6 +202,7 @@ netcdf.putVar(ncid,var10,Vw);
 netcdf.putVar(ncid,var11,state);
 netcdf.putVar(ncid,var12,TP_hy);
 
+netcdf.close(ncid);
 
 %% checking ...
 % The following code is unnecessary, but useful for checking
