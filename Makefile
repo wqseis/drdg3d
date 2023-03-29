@@ -102,9 +102,11 @@ SRC_SOLVER :=               \
        mod_fault.F90        \
        mod_exchange.F90     \
        mod_rk.F90           \
+       mod_energy.F90       \
        mod_io_fault.F90     \
        mod_io_grdsurf.F90   \
        mod_io_recv.F90      \
+       mod_io_energy.F90    \
        mod_recv.F90         \
        mod_check.F90        \
        seis3d.F90

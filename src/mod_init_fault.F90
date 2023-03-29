@@ -170,7 +170,7 @@ subroutine fault_init_tpv10(mesh)
   integer :: myrank
   real(rkind) :: vec_n(3),vec_m(3),vec_l(3),Tx,Ty,Tz,Tn,Tm,Tl
   real(rkind) :: vec_normal(3),vec_strike(3),vec_dip(3),Tnormal,Tstrike,Tdip
-  real(rkind) :: dist
+  real(rkind) :: dist,depth,sigma(3)
 
   myrank = mesh%rank
   ! ------------------------------------------------------------
@@ -209,6 +209,7 @@ subroutine fault_init_tpv10(mesh)
           vec_l = (/mesh%lx(j,ie),mesh%ly(j,ie),mesh%lz(j,ie)/)
 
           dist = -z/sin(PI/3.0)
+          depth = -z
 
           Tnormal = -7.378*dist
           Tstrike = 0
@@ -226,8 +227,38 @@ subroutine fault_init_tpv10(mesh)
             Tdip    = -Tdip
           end if
 
-
           call rotate_nml2xyz(vec_normal,vec_strike,vec_dip,Tnormal,Tstrike,Tdip,Tx,Ty,Tz)
+
+          if (&
+              trim(adjustl(problem)) .eq. 'tpv12' .or. &
+              trim(adjustl(problem)) .eq. 'TPV12' ) then
+            mesh%mu_s(i,is,ief) = 0.7
+            mesh%mu_d(i,is,ief) = 0.1
+            mesh%Dc  (i,is,ief) = 0.5
+            mesh%C0  (i,is,ief) = 0.2
+
+            if(abs(dist-12)<=asp_size .and. abs(yc)<=asp_size) then
+              mesh%mu_s(i,is,ief) = 0.54
+            else
+              mesh%mu_s(i,is,ief) = 0.7
+            end if
+
+            if (dist<=13.8) then
+              sigma(1) = (2.7-1.0)*9.8*depth
+              sigma(3) = 0.3496*sigma(1)
+              sigma(2) = (sigma(1)+sigma(3))/2.0
+            else
+              sigma(1) = (2.7-1.0)*9.8*depth
+              sigma(2) = (2.7-1.0)*9.8*depth
+              sigma(3) = (2.7-1.0)*9.8*depth
+            end if
+
+            sigma = -sigma
+
+            Tx = sigma(3)*vec_n(1)
+            Ty = sigma(2)*vec_n(2)
+            Tz = sigma(1)*vec_n(3)
+          end if
 
           call rotate_xyz2nml(vec_n,vec_m,vec_l,Tx,Ty,Tz,Tn,Tm,Tl)
 
@@ -274,6 +305,8 @@ subroutine fault_init_external(mesh)
   real(kind=rkind),allocatable,dimension(:,:,:) :: TP_hy
 
   integer :: FToV(4,3)
+
+  if (mesh%nfault_elem == 0) return;
 
   ! point outward
   ! Face 1: 1,3,2
@@ -355,6 +388,14 @@ subroutine fault_init_external(mesh)
   call check2(ierr,'inq_varid C0')
   ierr = nf90_get_var(ncid,varid,C0)
   call check2(ierr,'get_var C0')
+
+  if (friction_law == 5) then
+    ! rate state
+    ierr = nf90_inq_varid(ncid,'a',varid)
+    call check2(ierr,'inq_varid a')
+    ierr = nf90_get_var(ncid,varid,a)
+    call check2(ierr,'get_var a')
+  end if
 
   if (friction_law == 1 .or. &
       friction_law == 2 .or. &
@@ -440,6 +481,13 @@ subroutine fault_init_external(mesh)
 
           c=dTz0(1:3,is,ief)
           dTz=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
+
+          if (friction_law == 5 ) then
+            ! rate state
+            c=a(1:3,is,ief)
+            cp=tri_interp(v1,v2,v3,c(1),c(2),c(3),p)
+            mesh%a(i,is,ief)=cp
+          end if
 
           if (friction_law == 1 .or. &
               friction_law == 2 .or. &

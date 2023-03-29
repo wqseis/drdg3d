@@ -34,6 +34,7 @@ module mod_geometry
                          invVdm3D,          &
                          Dmatrices3D
   use mod_types,  only : meshvar
+  use mod_math,   only : cross
 
   implicit none
 
@@ -352,6 +353,8 @@ subroutine build_geometry(mesh)
   mesh%zs = mesh%rho*mesh%vs
   mesh%mu = mesh%rho*mesh%vs**2
   mesh%lam = mesh%rho*mesh%vp**2-2.0*mesh%mu
+
+  call cal_vol(mesh)
 
 #ifdef DEBUG
   print*,'rank=',myrank,'setDT'
@@ -868,5 +871,32 @@ subroutine write_normals(mesh,n)
   end do
   close(100)
 end subroutine
+
+subroutine cal_vol(mesh)
+  implicit none
+  type(meshvar) :: mesh
+  integer :: ie
+  real(kind=rkind),dimension(3) :: A,B,C,D
+
+  do ie = 1,mesh%Nelem
+    A = mesh%coord(:,mesh%elem(1,ie))
+    B = mesh%coord(:,mesh%elem(2,ie))
+    C = mesh%coord(:,mesh%elem(3,ie))
+    D = mesh%coord(:,mesh%elem(4,ie))
+    mesh%vol(ie) = tetra_vol(A,B,C,D)
+  end do
+
+  print*,'rank=',mesh%rank,'vol = ',minval(mesh%vol),' ~ ',maxval(mesh%vol)
+
+end subroutine
+
+function tetra_vol(A,B,C,D) result(vol)
+  implicit none
+  real(kind=rkind),dimension(3) :: A,B,C,D
+  real(kind=rkind) :: vol
+
+  vol = dot_product(B-A,cross(C-A,D-A))/6.0;
+
+end
 
 end module

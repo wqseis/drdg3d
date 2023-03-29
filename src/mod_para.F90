@@ -36,6 +36,7 @@ module mod_para
   !integer,parameter :: CUSTOM_REAL = SIZE_DOUBLE
   integer,parameter :: CUSTOM_REAL = RKIND
   integer,parameter :: MAX_NUM_RECV = 1000
+  integer,parameter :: NVAR_RECV = 13
 
   !integer,parameter :: nsurface = 4
   integer,parameter :: Nfaces = 4

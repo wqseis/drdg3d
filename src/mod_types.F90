@@ -114,6 +114,7 @@ module mod_types
     real(kind=rkind),dimension(:,:,:),pointer :: C0 => null()
     real(kind=rkind),dimension(:,:,:),pointer :: ruptime => null()
     real(kind=rkind),dimension(:,:,:),pointer :: peakrate => null()
+    real(kind=rkind),dimension(:,:),pointer :: faultarea => null()
 
     ! rate state
     real(kind=rkind),dimension(:,:,:),pointer :: a => null()
@@ -192,6 +193,7 @@ module mod_types
     !real(kind=rkind),dimension(:),allocatable :: lam
     !real(kind=rkind),dimension(:),allocatable :: mu
     real(kind=rkind),dimension(:),pointer :: damp => null()
+    real(kind=rkind),dimension(:),pointer :: vol => null()
   !@
   !@  ! fault recvs
   !@  integer,dimension(:),pointer :: recv_fid => null()

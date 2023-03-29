@@ -22,7 +22,7 @@ for i = 0:nproc-1
         end
 
         %idx = find(id==id1 & ndotn > 0.707);
-        idx = find(id==id1 & ndotn > 0.1);
+        idx = find(id==id1 & ndotn > 0.01);
 
         if (~isempty(idx))
             ridx = idx(1);
@@ -32,7 +32,8 @@ for i = 0:nproc-1
     end
 end
 
-
+%idx
+%ridx
 fnm = [data_dir, '/recv_mpi',num2str(mpi_id,'%06d'),'.nc'];
 t = ncread(fnm,'time');
 coord = ncread(fnm,'coord',[1,ridx],[3,1]);
@@ -63,8 +64,14 @@ if bc >= BC_FAULT
             ivar = 9;
         case 'TP_P'
             ivar = 10;
+        case 'Vx'
+            ivar = 11;
+        case 'Vy'
+            ivar = 12;
+        case 'Vz'
+            ivar = 13;
         case 'all'
-            ivar = 1; nvar = 10;
+            ivar = 1; nvar = 13;
         otherwise
             ivar = 1;
     end
@@ -91,4 +98,14 @@ if (bc == BC_FREE && strcmp(varnm,'all'))
         v(i+3,:) = cumtrapz(t,v(i,:));
     end
 end
+
+if (bc >= BC_FAULT && strcmp(varnm,'all'))
+    v1 = zeros(size(v,1)+3,size(v,2));
+    v1(1:13,:) = v;
+    for i = 1:3
+        v1(i+13,:) = cumtrapz(t,v(i+10,:));
+    end
+    v = v1;
+end
+
 end

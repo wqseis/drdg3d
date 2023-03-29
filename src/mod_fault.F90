@@ -20,6 +20,7 @@
 module mod_fault
   use mod_para,       only : RKIND,             &
                              Np, Nfp, Nfaces,   &
+                             NGLL,              &
                              problem,           &
                              BC_FREE, BC_FAULT
   use mod_types,      only : meshvar
@@ -27,6 +28,7 @@ module mod_fault
                              fault_init_tpv3,     &
                              fault_init_tpv10
 
+  use mod_math,       only : cross, norm3
   !use mod_rotate,     only : rotate_xyz2nml
 
   implicit none
@@ -166,6 +168,7 @@ subroutine fault_init(mesh)
   allocate(mesh%C0      (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%ruptime (Nfp,Nfaces,mesh%nfault_elem))
   allocate(mesh%peakrate(Nfp,Nfaces,mesh%nfault_elem))
+  allocate(mesh%faultarea(Nfaces,mesh%nfault_elem))
 
   ! rate state
   allocate(mesh%a    (Nfp,Nfaces,mesh%nfault_elem))
@@ -582,7 +585,48 @@ subroutine fault_init(mesh)
 !@    !end if
 !@
 !@
+
+  call cal_fault_area(mesh)
 end subroutine fault_init
+
+subroutine cal_fault_area(mesh)
+  implicit none
+  type(meshvar) :: mesh
+  integer :: ie, ief, is, i
+  real(kind=rkind),dimension(3) :: A,B,C
+  real(kind=rkind) :: areamax,areamin
+
+  if(mesh%nfault_elem==0) return
+
+  mesh%faultarea(:,:) = 0
+
+  areamax = -1
+  areamin = 1e30
+
+  do ief = 1,mesh%nfault_elem
+    ie = mesh%fault2wave(ief)
+    do is = 1,Nfaces
+      if (mesh%bctype(is,ie) >= BC_FAULT) then
+        i = mesh%vmapM(1,is,ie)
+        A = (/mesh%vx(i),mesh%vy(i),mesh%vz(i)/)
+        i = mesh%vmapM(NGLL,is,ie)
+        B = (/mesh%vx(i),mesh%vy(i),mesh%vz(i)/)
+        i = mesh%vmapM(Nfp,is,ie)
+        C = (/mesh%vx(i),mesh%vy(i),mesh%vz(i)/)
+        mesh%faultarea(is,ief) = tri_area(A,B,C)
+
+        if(mesh%faultarea(is,ief) > areamax) areamax = mesh%faultarea(is,ief)
+        if(mesh%faultarea(is,ief) < areamin) areamin = mesh%faultarea(is,ief)
+      else
+        mesh%faultarea(is,ief) = 0.0
+      end if
+    end do
+  end do
+
+  !print*,'rank=',mesh%rank,'area=',minval(mesh%faultarea),' ~ ',maxval(mesh%faultarea)
+  print*,'rank=',mesh%rank,'area=',areamin,' ~ ',areamax
+
+end subroutine
 
 subroutine write_fault(mesh,it,myrank)
   implicit none
@@ -611,5 +655,14 @@ subroutine write_fault(mesh,it,myrank)
   end do
   close(100)
 end subroutine
+
+function tri_area(A,B,C) result(area)
+  implicit none
+  real(kind=rkind),dimension(3) :: A, B, C
+  real(kind=rkind) :: area
+
+  area = norm3(cross(B-A,C-A))/2.0
+
+end
 
 end module

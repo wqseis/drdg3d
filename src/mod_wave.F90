@@ -355,16 +355,16 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
   real(kind=RKIND) :: rho,rrho,cp,cs
   real(kind=RKIND) :: rho_out,rrho_out,cp_out,cs_out
   real(kind=RKIND),dimension(Nfp*Nfaces,Nvar) :: fluxs
-  real(kind=RKIND),dimension(Nvar) :: uL,uR,fstar!,FL,FR!,du,dF,dFx,dFy,dFz
+  real(kind=RKIND),dimension(Nvar) :: uL,uR,fstar,FL,FR,du,dF,dFx,dFy,dFz
   real(kind=RKIND),dimension(3) :: n_n,n_m,n_l
-  !real(kind=RKIND),dimension(3,3) :: matTv,invTv
-  !real(kind=RKIND),dimension(6,6) :: matTs,invTs
+  real(kind=RKIND),dimension(3,3) :: matTv,invTv
+  real(kind=RKIND),dimension(6,6) :: matTs,invTs
   real(kind=RKIND) :: Zp,Zs,Zs_in,Zs_out,Zp_out,eta
-  !real(kind=RKIND) :: alpha(3)
+  real(kind=RKIND) :: alpha(3)
   real(kind=RKIND) :: tau0n,tau0m,tau0l,vv1,vv2,vel
   real(kind=RKIND) :: tau_lock,tau_lock_1,tau_lock_2,tau_str,tau_n
-  !real(kind=RKIND) :: V_ref,L_ref,coef,tau_n_eff,strength_exp,sigma,dt
-  real(kind=RKIND) :: sigma,dt
+  real(kind=RKIND) :: V_ref,L_ref,coef,tau_n_eff,strength_exp,sigma,dt
+  !real(kind=RKIND) :: sigma,dt
   real(kind=RKIND) :: fault_mu,mu_s,mu_d,Dc,C0,sliprate,slip
   integer :: flipped_index(Nfp)
   integer :: mpi_e,mpi_n
@@ -390,6 +390,708 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
   !real(kind=RKIND) :: FR_x,FR_y,FR_z
   real(kind=RKIND) :: dVx,dVy,dVz
   real(kind=RKIND) :: dTx,dTy,dTz
+  real(kind=RKIND) :: T0
+  real(kind=RKIND) :: T,f1,f2,t00
+
+
+
+!!#if defined (TPV24) || defined (TPV26) || defined (TPV29) || defined (WENCHUAN) || defined (TW)
+!!!#if defined (TPV24) || defined (TPV26) || defined (TPV29) || defined (TW)
+  !real(kind=RKIND) :: SW_T, SW_t0, SW_f1, SW_f2, dist, SW_rcrit
+  real(kind=RKIND) :: x,y,z,cur_time!,Pf
+  !SW_rcrit = sqrt(10*10/PI)
+  !SW_rcrit = 4.0
+  !SW_t0 = 0.5
+  !SW_t0 = 0.005
+!!!#endif
+
+  !do ie = 1,mesh%Nelem
+  ief = mesh%wave2fault(ie) ! =0 if not fault
+
+  rho=mesh%rho(ie)
+  cp=mesh%vp(ie)
+  cs=mesh%vs(ie)
+  rrho = 1d0/rho
+
+  Zp = rho*cp
+  Zs = rho*cs
+
+  ! will overwrite
+  rho_out = rho
+  rrho_out = rrho
+  cp_out = cp
+  cs_out = cs
+
+  dt = mesh%deltat
+
+  do is = 1,Nfaces
+  do i = 1,Nfp
+  depth = -mesh%vz(mesh%vmapM(i,is,ie))
+
+  uL = u(mesh%vmapM(i,is,ie),:)
+
+  neigh = mesh%neigh(is,ie)
+  direction = mesh%direction(is,ie)
+  !if(neigh>0) uR=u(mesh%vmapP(i,is,ie),:)
+  if(neigh==ie) uR=0 ! absorbing
+  !if(neigh>0 .and. neigh .ne. ie) then
+  if(neigh>0) then
+    uR=u(mesh%vmapP(i,is,ie),:)
+    rho_out = mesh%rho(neigh)
+    cp_out = mesh%vp(neigh)
+    cs_out = mesh%vs(neigh)
+  elseif (neigh==0) then
+    uR(:) = 0
+  elseif (neigh==-1) then
+    !print*,'mpi'
+    mpi_e = mesh%mpi_ibool(is,ie)
+    mpi_n = mesh%mpi_interface(4,is,ie)
+    !print*,'mpi_e=',mpi_e
+    !print*,'mpi_n=',mpi_n
+    flipped_index = mesh%flipped_index(:,direction)
+    uR(:) = qi(flipped_index(i),1:9,mpi_e,mpi_n)  ! mpi
+    !Loop over all faces that sit on an mpi-interface for that rank/processor
+    !do i = 1, size(mesh%mpi_vp(:,1))
+    do j = 1, mesh%pinterfaces
+      !Check if the rank and the element in that rank are in the mpi-impedance array (they should)
+      if ((abs(mesh%mpi_vp(j,2) - mesh%mpi_interface(1,is,ie)) < epsilon(mesh%mpi_vp(j,2))) .and. &
+          (abs(mesh%mpi_vp(j,3) - mesh%mpi_interface(2,is,ie)) < epsilon(mesh%mpi_vp(j,3)))) then
+      !if ( int(mesh%mpi_vp(i,2)) .eq. mesh%mpi_interface(1,is,ie) .and. &
+      !     int(mesh%mpi_vp(i,3)) .eq. mesh%mpi_interface(2,is,ie) ) then
+        !associate corresponding impedance value to zout
+        rho_out = mesh%mpi_rho(j,1)
+        cp_out = mesh%mpi_vp(j,1)
+        cs_out = mesh%mpi_vs(j,1)
+        rrho_out = 1d0/rho_out
+      end if
+    end do
+  else
+    uR(:) = 1e38
+  end if
+  if(neigh==ie) uR=0 ! absorbing
+
+  if (mesh%bctype(is,ie) == BC_FREE) then ! free surface
+      uR(1:3) = uL(1:3)
+      uR(4:9) = -uL(4:9)
+      !uR(:) = 0
+  end if
+
+  !if (mesh%bctype(is,ie) >= BC_FAULT) then
+  !    uR = uL
+  !    uR(1:3) = -uL(1:3)
+  !end if
+
+  Zp_out = rho_out * cp_out
+  Zs_out = rho_out * cs_out
+
+  j = i+(is-1)*Nfp
+  n_n = (/mesh%nx(j,ie),mesh%ny(j,ie),mesh%nz(j,ie)/)
+  n_m = (/mesh%mx(j,ie),mesh%my(j,ie),mesh%mz(j,ie)/)
+  n_l = (/mesh%lx(j,ie),mesh%ly(j,ie),mesh%lz(j,ie)/)
+
+  !n_m = (/1,0,0/)
+  !n_n = (/0,1,0/)
+  !n_l = (/0,0,1/)
+  !print*,n_n
+  !if(abs(norm3(n_n)-1.0)>1e-3) then
+  !print*,n_n
+  !end if
+
+!  du = uR-uL
+!  call Flux1(du,rho,cp,cs,dFx)
+!  call Flux2(du,rho,cp,cs,dFy)
+!  call Flux3(du,rho,cp,cs,dFz)
+!  fstar = dFx*n_n(1)+dFy*n_n(2)+dFz*n_n(3)
+!  fstar = fstar * 0.5
+  !return
+
+  !call rotation_matrix_velocity    (n_n,n_m,n_l,matTv)
+  !call rotation_matrix_strain      (n_n,n_m,n_l,matTs)
+  call rotation_matrix_velocity_inv(n_n,n_m,n_l,invTv)
+  call rotation_matrix_strain_inv  (n_n,n_m,n_l,invTs)
+
+  !if (.false.) then
+  !call rotate_u(matTv,matTs,uL)
+  !call rotate_u(matTv,matTs,uR)
+
+  !call Flux1(uL,rho,cp,cs,FL)
+  !call Flux1(uR,rho,cp,cs,FR)
+  !end if
+
+  !if (.false.) then
+  ! ============= - side ==============================
+  !Vx  = uL(1)*rrho
+  !Vy  = uL(2)*rrho
+  !Vz  = uL(3)*rrho
+  !exx = uL(4)
+  !eyy = uL(5)
+  !ezz = uL(6)
+  !eyz = uL(7)
+  !exz = uL(8)
+  !exy = uL(9)
+  !call strain2stress(exx,eyy,ezz,eyz,exz,exy,rho,cp,cs, &
+  !                   sxx,syy,szz,syz,sxz,sxy)
+  !!if(mesh%irk==mesh%nrk) call Return_Map(exx,eyy,ezz,eyz,exz,exy,rho,cp,cs,depth,dt,&
+  !!                                       sxx,syy,szz,syz,sxz,sxy)
+  !Tx = sxx*n_n(1)+sxy*n_n(2)+sxz*n_n(3)
+  !Ty = sxy*n_n(1)+syy*n_n(2)+syz*n_n(3)
+  !Tz = sxz*n_n(1)+syz*n_n(2)+szz*n_n(3)
+
+  call extract_traction_velocity(uL,n_n,rho,cp,cs,Vx,Vy,Vz,Tx,Ty,Tz)
+
+  dVx = -Vx
+  dVy = -Vy
+  dVz = -Vz
+  dTx = -Tx
+  dTy = -Ty
+  dTz = -Tz
+
+  ! rotate to local
+  call rotate_xyz2nml(n_n,n_m,n_l,Tx,Ty,Tz,Tn_m,Tm_m,Tl_m)
+  call rotate_xyz2nml(n_n,n_m,n_l,Vx,Vy,Vz,Vn_m,Vm_m,Vl_m)
+  FL = 0
+  FL(1) = Tn_m
+  FL(2) = Tm_m
+  FL(3) = Tl_m
+  FL(4) = Vn_m
+  FL(8) = Vl_m
+  FL(9) = Vm_m
+
+  !! ============= + side ==============================
+  !Vx  = uR(1)*rrho_out
+  !Vy  = uR(2)*rrho_out
+  !Vz  = uR(3)*rrho_out
+  !exx = uR(4)
+  !eyy = uR(5)
+  !ezz = uR(6)
+  !eyz = uR(7)
+  !exz = uR(8)
+  !exy = uR(9)
+  !call strain2stress(exx,eyy,ezz,eyz,exz,exy,rho_out,cp_out,cs_out, &
+  !                   sxx,syy,szz,syz,sxz,sxy)
+  !!if(mesh%irk==mesh%nrk) call Return_Map(exx,eyy,ezz,eyz,exz,exy,rho,cp,cs,depth,dt,&
+  !!                                       sxx,syy,szz,syz,sxz,sxy)
+  !Tx = sxx*n_n(1)+sxy*n_n(2)+sxz*n_n(3)
+  !Ty = sxy*n_n(1)+syy*n_n(2)+syz*n_n(3)
+  !Tz = sxz*n_n(1)+syz*n_n(2)+szz*n_n(3)
+
+  call extract_traction_velocity(uR,n_n,rho_out,cp_out,cs_out,Vx,Vy,Vz,Tx,Ty,Tz)
+
+  dVx = dVx + Vx
+  dVy = dVy + Vy
+  dVz = dVz + Vz
+  dTx = dTx + Tx
+  dTy = dTy + Ty
+  dTz = dTz + Tz
+
+  if (flux_method == 2 .and. &
+      mesh%bctype(is,ie) == BC_IN .and. &
+      mesh%fluxtype(is,ie) == 1) then
+    !fstar = (fR -fL)*0.5
+    fstar(1) = dTx
+    fstar(2) = dTy
+    fstar(3) = dTz
+    fstar(4) = n_n(1)*dVx
+    fstar(5) = n_n(2)*dVy
+    fstar(6) = n_n(3)*dVz
+    fstar(7) = n_n(3)*dVy+n_n(2)*dVz
+    fstar(8) = n_n(3)*dVx+n_n(1)*dVz
+    fstar(9) = n_n(2)*dVx+n_n(1)*dVy
+    fstar = 0.5*fstar
+    goto 100
+  end if
+
+  if (flux_method == 1 .and. &
+      mesh%bctype(is,ie) == BC_IN ) then
+    !fstar = (fR -fL)*0.5
+    fstar(1) = dTx
+    fstar(2) = dTy
+    fstar(3) = dTz
+    fstar(4) = n_n(1)*dVx
+    fstar(5) = n_n(2)*dVy
+    fstar(6) = n_n(3)*dVz
+    fstar(7) = n_n(3)*dVy+n_n(2)*dVz
+    fstar(8) = n_n(3)*dVx+n_n(1)*dVz
+    fstar(9) = n_n(2)*dVx+n_n(1)*dVy
+    fstar = 0.5*fstar
+    goto 100
+  end if
+
+
+  ! rotate to local
+  call rotate_xyz2nml(n_n,n_m,n_l,Tx,Ty,Tz,Tn_p,Tm_p,Tl_p)
+  call rotate_xyz2nml(n_n,n_m,n_l,Vx,Vy,Vz,Vn_p,Vm_p,Vl_p)
+  FR = 0
+  FR(1) = Tn_p
+  FR(2) = Tm_p
+  FR(3) = Tl_p
+  FR(4) = Vn_p
+  FR(8) = Vl_p
+  FR(9) = Vm_p
+
+  !call riemannSolver_continuous(vn_p,vn_m,Tn_p,Tn_m,Zp_out,Zp,vn_hat_p,vn_hat_m,Tn_hat_p,Tn_hat_m)
+  !call riemannSolver_continuous(vm_p,vm_m,Tm_p,Tm_m,Zs_out,Zs,vm_hat_p,vm_hat_m,Tm_hat_p,Tm_hat_m)
+  !call riemannSolver_continuous(vl_p,vl_m,Tl_p,Tl_m,Zs_out,Zs,vl_hat_p,vl_hat_m,Tl_hat_p,Tl_hat_m)
+
+
+  !end if
+  !FL = 0
+  !FL(1) = sxx
+  !FL(2) = sxy
+  !FL(3) = sxz
+  !FL(4) = uL(1)/rho
+  !FL(8) = uL(3)/rho
+  !FL(9) = uL(2)/rho
+
+  !exx = uR(4)
+  !eyy = uR(5)
+  !ezz = uR(6)
+  !eyz = uR(7)
+  !exz = uR(8)
+  !exy = uR(9)
+  !call strain2stress(exx,eyy,ezz,eyz,exz,exy,rho,cp,cs, &
+  !                   sxx,syy,szz,syz,sxz,sxy)
+  !FR = 0
+  !FR(1) = sxx
+  !FR(2) = sxy
+  !FR(3) = sxz
+  !FR(4) = uR(1)/rho
+  !FR(8) = uR(3)/rho
+  !FR(9) = uR(2)/rho
+
+
+  !fstar = 0.5*(fR-fL) ! centering flux
+  ! F=(Sxx,Sxy,Sxz,Vx,0,0,0,Vz,Vy)
+  !fstar(1) = 0.5*(fR(1)-fL(1)) + 0.5*(fR(4)-fL(4))*Zp
+  !fstar(2) = 0.5*(fR(2)-fL(2)) + 0.5*(fR(9)-fL(9))*Zs
+  !fstar(3) = 0.5*(fR(3)-fL(3)) + 0.5*(fR(8)-fL(8))*Zs
+  !fstar(4) = 0.5*(fR(4)-fL(4)) + 0.5*(fR(1)-fL(1))/Zp
+  !fstar(5) = 0
+  !fstar(6) = 0
+  !fstar(7) = 0
+  !fstar(8) = 0.5*(fR(8)-fL(8)) + 0.5*(fR(3)-fL(3))/Zs
+  !fstar(9) = 0.5*(fR(9)-fL(9)) + 0.5*(fR(2)-fL(2))/Zs
+
+  dF = FR-FL
+  alpha(1) = (dF(1)+Zp_out*dF(4))/(Zp+Zp_out)
+  alpha(2) = (dF(2)+Zs_out*dF(9))/(Zs+Zs_out)
+  alpha(3) = (dF(3)+Zs_out*dF(8))/(Zs+Zs_out)
+
+  fstar(1) = alpha(1)*Zp
+  fstar(2) = alpha(2)*Zs
+  fstar(3) = alpha(3)*Zs
+  fstar(4) = alpha(1)
+  fstar(5) = 0
+  fstar(6) = 0
+  fstar(7) = 0
+  fstar(8) = alpha(3)
+  fstar(9) = alpha(2)
+
+!!!#ifdef WITH_RUPTURE
+!  if (flux_method == 1 .and. &
+!      mesh%bctype(is,ie) == BC_IN .and. &
+!      mesh%fluxtype(is,ie)==1) then
+!    !fstar = (fR -fL)*0.5
+!  end if
+
+  if (mesh%bctype(is,ie) >= BC_FAULT) then
+
+    zs_in  = rho*cs
+    zs_out = rho_out*cs_out
+    eta = zs_in*zs_out/(zs_in+zs_out)
+
+    if (smooth_load == 1) then
+      Gt = Gt_func(mesh%current_time,smooth_load_time)
+    else
+      Gt = 1.0
+    end if
+
+    Tau0n    = mesh%Tau0n(i,is,ief) + Gt * mesh%dtau0n(i,is,ief)
+    Tau0m    = mesh%Tau0m(i,is,ief) + Gt * mesh%dtau0m(i,is,ief)
+    Tau0l    = mesh%Tau0l(i,is,ief) + Gt * mesh%dtau0l(i,is,ief)
+
+    slip     = mesh%slip    (i,is,ief)
+    sliprate = mesh%sliprate(i,is,ief)
+    sigma    = mesh%sigma   (i,is,ief)
+    mu_s     = mesh%mu_s    (i,is,ief)
+    mu_d     = mesh%mu_d    (i,is,ief)
+    Dc       = mesh%Dc      (i,is,ief)
+    C0       = mesh%C0      (i,is,ief)
+
+    ! f (sxx,sxy,vx,0,vy)
+    ! F=(Sxx,Sxy,Sxz,Vx,0,0,0,Vz,Vy)
+    Tau_lock_1 = fL(2) + fstar(2) + Tau0m
+    Tau_lock_2 = fL(3) + fstar(3) + Tau0l
+    !Tau_lock_1 = Tm_hat_m + Tau0m
+    !Tau_lock_2 = Tl_hat_m + Tau0l
+    Tau_lock = sqrt(Tau_lock_1**2 + Tau_lock_2**2)
+    Tau_n = fL(1) + fstar(1) + Tau0n ! sxx
+    !Tau_n = Tn_hat_m + Tau0n
+    !Tn_m = sign(1d0,Tau_lock) * Tn_m
+    !if (Tau_n > 0.0) Tau_n = 0.0
+!!!#ifdef TPV24
+!!!      Tau_n = Tau_n + Pf
+!!!#endif
+
+    if (thermalpressure == 1) then
+      ! thermal pressurization
+      Tau_n = Tau_n + mesh%TP_P(i,is,ief)
+    end if
+
+!#ifdef TPV6
+if (.false.) then
+      ! for tpv6
+      ! Prakash-Clifton
+      V_ref = 1.0
+      L_ref = 0.2*Dc
+      !L_ref = 5*Dc
+      dt = mesh%deltat
+      coef = dt/L_ref
+      Tau_n_eff = Tau_n + exp(-(sliprate+V_ref)*coef)*(mesh%sigma(i,is,ie)-Tau_n)
+      !
+      if(sliprate > 0.01) Tau_n = Tau_n_eff
+end if
+!#endif
+
+
+!!!#if defined (TPV24) || defined (TPV26) || defined (TPV29) || defined (WENCHUAN) || defined(TW)
+!!!#if defined (TPV24) || defined (TPV26) || defined (TPV29)
+
+    cur_time = mesh%current_time
+    x = mesh%vx(mesh%vmapM(i,is,ie))
+    y = mesh%vy(mesh%vmapM(i,is,ie))
+    z = mesh%vz(mesh%vmapM(i,is,ie))
+
+
+    ! slip weakening
+    fault_mu = mu_s - (mu_s-mu_d) * min(slip/Dc,1.0)
+
+    if (friction_law == 4) then
+      ! time weakening
+      call time_weakening(y,z,nucleate_y0,nucleate_z0,nucleate_rcrit,&
+          nucleate_Vrup,TimeForcedRup,cur_time,&
+          slip,Dc,mu_s,mu_d,fault_mu)
+    end if
+
+    if (friction_law == 5) then
+      ! forced rupture
+      T0 = mesh%a(i,is,ief)
+      if (slip < Dc .and. cur_time < T0) then
+        ! slip weakening
+        fault_mu = mu_s - (mu_s-mu_d) * (slip/Dc)
+      else
+        fault_mu = mu_d
+      end if
+
+      !t00 = 0.5
+      !T = T0
+
+      !if(slip<Dc) then
+      !  f1 = slip/Dc
+      !else
+      !  f1 = 1.0
+      !endif
+      !if(cur_time<T) then
+      !  f2 = 0.0
+      !elseif(cur_time<T+t00) then
+      !  f2 = (cur_time-T)/t00
+      !else
+      !  f2 = 1.0
+      !endif
+
+      !fault_mu = mu_s-(mu_s-mu_d)*max(f1, f2)
+    end if
+
+    !!Pf = 9.8*(-z) ! In MPa
+    !!Pf = 0.0
+    !!Tau_n = Tau_n + Pf ! effective normal stress
+    !dist = sqrt( (y+8.0)**2 + (z+10.0)**2) ! TPV24
+    !!dist = sqrt( (y+5.0)**2 + (z+10.0)**2) ! TPV26 or TPV29
+    !!dist = sqrt( (y-0.0)**2 + (x-20.0)**2) ! TW dip 12
+    !!dist = sqrt( (y+.0)**2 + (z+10.0)**2) ! WENCHUAN
+    !if(dist<SW_rcrit) then
+    !  SW_T=dist/(0.7*cs)+0.081*SW_rcrit/(0.7*cs)*(1./(1.-(dist/SW_rcrit)**2) -1.0)
+    !else
+    !  SW_T = 1.0e9
+    !endif
+
+    !if(slip<Dc) then
+    !  SW_f1 = slip/Dc
+    !else
+    !  SW_f1 = 1.0
+    !endif
+    !if(cur_time<SW_T) then
+    !  SW_f2 = 0.0
+    !elseif(cur_time<SW_T+SW_t0) then
+    !  SW_f2 = (cur_time-SW_T)/SW_t0
+    !else
+    !  SW_f2 = 1.0
+    !endif
+
+    !fault_mu = mu_s-(mu_s-mu_d)*max(SW_f1, SW_f2)
+!#else
+      ! slip weakening
+!    fault_mu = mu_s - (mu_s-mu_d) * min(slip/Dc,1.0)
+!#endif
+
+    Tau_str = fault_mu * max(0.0,-Tau_n) + C0
+
+    !call prakash_cliff_fric(Tau_str,sigma,sliprate,V_ref,L_ref,fault_mu,dt)
+
+    if (abs(Tau_lock) .gt. abs(Tau_str)) then ! fault is slipping
+      ! solve for slip rate
+      Vel = (abs(Tau_lock)-abs(Tau_str))/eta
+      ! same sign with Tau_lock, parallel condition
+      vv1 = Tau_lock_1*Vel/(eta*Vel+Tau_str)
+      vv2 = Tau_lock_2*Vel/(eta*Vel+Tau_str)
+    else
+      vv1 = 0.0
+      vv2 = 0.0
+    endif
+
+    if (friction_law == 1 .or. &
+        friction_law == 2 .or. &
+        friction_law == 3) then
+      ! rate state
+      !Phi = sqrt(phi_1**2 + phi_2**2) ! stress-transfer functional
+      Phi = Tau_lock
+      sigma_n = max(0.0,-Tau_n)
+      !V0 = 1e-6
+      !f0 = 0.6
+      !fw = 0.2
+      V0 = RS_V0
+      f0 = RS_f0
+      fw = RS_fw
+      a = mesh%a(i,is,ief)
+      b = mesh%b(i,is,ief)
+      !if (friction_law == 3) then
+      !  Vw = mesh%Vw(i,is,ief)
+      !end if
+      L0 = mesh%Dc(i,is,ief)
+      psi = mesh%state(i,is,ief)
+      !if(ief==1 .and. i==1) print*,L0,psi
+      !if(abs(y-0)<1 .and. abs(z-0)<1) then
+      !  print*,'phi=',Phi,'sigma=',sigma_n,'psi=',psi,'a=',a,'eta=',eta,'V0=',V0,'V=',V
+      !end if
+      ! initialize V
+      !V = sqrt(v1**2 + v2**2)
+      V = mesh%sliprate(i,is,ief)
+      if (V > Phi) V = 0.5d0*Phi/eta
+      ! solve a nonlinear problem for slip-rate: V
+      call Regula_Falsi(V,Phi,eta,sigma_n,psi,V0,a)
+      ! compute slip velocities
+      fv = sigma_n*a*asinh(0.5d0*V/V0*exp(psi/a))
+      vv1 = tau_lock_1*V/(eta*V+fv)
+      vv2 = tau_lock_2*V/(eta*V+fv)
+
+      if (friction_law == 1) then
+        ! ageing law
+        mesh%hstate(i,is,ief) = b*V0/L0*exp(-(psi-f0)/b) - V*b/L0
+      end if
+
+      if (friction_law == 2) then
+        ! slip law
+        mesh%hstate(i,is,ief) = -b*V/L0*(log(V/V0)+(psi-f0)/b)
+      end if
+
+      if (friction_law == 3) then
+        ! slip law with flash heating
+        Vw = mesh%Vw(i,is,ief)
+        flv = f0 - (b-a)*log(V/V0)
+        fss = fw + (flv-fw)/( (1.0+(V/Vw)**8)**0.125 )
+        !fss = flv
+        psiss = a*(log(sinh(fss/a)) + log(2.0*(V0/V)) )
+        mesh%hstate(i,is,ief) = -V/L0*(psi-psiss)
+      end if
+    end if
+
+      !print*,vv
+      !mesh%sliprate(i,is,ie) = abs(vv)!abs(V_p-V_m)
+    mesh%sliprate(i,is,ief) = sqrt(vv1**2+vv2**2) !abs(V_p-V_m)
+    !if (mesh%sliprate(i,is,ief) > 1e-3 .and. mesh%ruptime(i,is,ief) < 0) then
+    !    mesh%ruptime(i,is,ief) = mesh%current_time
+    !end if
+
+    !if (mesh%peakrate(i,is,ief) < mesh%sliprate(i,is,ief)) then
+    !    mesh%peakrate(i,is,ief) = mesh%sliprate(i,is,ief)
+    !end if
+
+    ! f (sxx,sxy,vx,0,vy)
+    ! F=(Sxx,Sxy,Sxz,Vx,0,0,0,Vz,Vy)
+    fstar(2) = fstar(2) - eta*vv1       ! sxy
+    fstar(3) = fstar(3) - eta*vv2       ! sxz
+    fstar(8) = fstar(8) - eta*vv2/zs_in ! vz
+    fstar(9) = fstar(9) - eta*vv1/zs_in ! vy
+
+    !Tm_hat_m = Tm_hat_m - eta*vv1
+    !Tl_hat_m = Tl_hat_m - eta*vv2       ! sxz
+    !vl_hat_m = vl_hat_m - eta*vv2/zs_in ! vz
+    !vm_hat_m = vm_hat_m - eta*vv1/zs_in ! vy
+
+    !fstar(1) = Tau_n - Tau0n - fL(1) 
+
+    !fstar(2) =  - eta*vv1       ! sxy
+    !fstar(3) =  - eta*vv2       ! sxz
+    !fstar(8) =  - eta*vv2/zs_in ! vz
+    !fstar(9) =  - eta*vv1/zs_in ! vy
+
+    !mesh%stress(i,is,ief) = sqrt( &
+    !        (fstar(2)+fL(2)+mesh%tau0m(i,is,ief))**2+ &
+    !        (fstar(3)+fL(3)+mesh%tau0l(i,is,ief))**2)
+    !mesh%sigma(i,is,ief) = mesh%tau0n(i,is,ief) + fstar(1) + fL(1)
+    !mesh%stress(i,is,ief) = sqrt( &
+    !        (fstar(2)+fL(2)+tau0m)**2+ &
+    !        (fstar(3)+fL(3)+tau0l)**2)
+    !mesh%sigma(i,is,ief) = tau0n + fstar(1) + fL(1)
+    !mesh%stress1(i,is,ief) = Tm_hat_m+tau0m
+    !mesh%stress2(i,is,ief) = Tl_hat_m+tau0l
+    !mesh%stress(i,is,ief) = sqrt( &
+    !        (Tm_hat_m+tau0m)**2+ &
+    !        (Tl_hat_m+tau0l)**2)
+    mesh%stress1(i,is,ief) = fstar(2)+fL(2)+tau0m
+    mesh%stress2(i,is,ief) = fstar(3)+fL(3)+tau0l
+    mesh%stress(i,is,ief) = sqrt( &
+            (fstar(2)+fL(2)+tau0m)**2+ &
+            (fstar(3)+fL(3)+tau0l)**2)
+
+    !mesh%stress(i,is,ie) = Tau_str
+    mesh%sigma(i,is,ief) = Tau_n
+
+    !mesh%sliprate1(i,is,ief) = fL(9)+fstar(9)
+    !mesh%sliprate2(i,is,ief) = fL(8)+fstar(8)
+
+    mesh%sliprate1(i,is,ief) = vv1
+    mesh%sliprate2(i,is,ief) = vv2
+
+    !! save fault recvs
+    !do n = 1,mesh%nrecv
+    !  if (ie == mesh%recv_elem(n) .and. is == mesh%recv_face(n)) then
+    !    mesh%recv_buffer(i,n,1) = mesh%sliprate(i,is,ief)
+    !    mesh%recv_buffer(i,n,2) = mesh%stress(i,is,ief)
+    !    mesh%recv_buffer(i,n,3) = mesh%sigma(i,is,ief)
+    !    mesh%recv_buffer(i,n,4) = mesh%slip(i,is,ief)
+    !  end if
+    !end do
+
+  end if ! end of BC_FAULT
+!!!#endif
+
+  call rotate_u(invTv,invTs,fstar)
+
+  !call generate_fluctuations(Zp,Tn_m,Tn_hat_m,vn_m,vn_hat_m,FLn)
+  !call generate_fluctuations(Zs,Tm_m,Tm_hat_m,vm_m,vm_hat_m,FLm)
+  !call generate_fluctuations(Zs,Tl_m,Tl_hat_m,vl_m,vl_hat_m,FLl)
+
+  !FLn = 0.5*((Tn_hat_m-Tn_m)+Zp*(vn_hat_m-vn_m))
+  !FLm = 0.5*((Tm_hat_m-Tm_m)+Zs*(vm_hat_m-vm_m))
+  !FLl = 0.5*((Tl_hat_m-Tl_m)+Zs*(vl_hat_m-vl_m))
+
+  !call generate_fluctuations(Zp_out,Tn_p,Tn_hat_p,vn_p,vn_hat_p,FRn)
+  !call generate_fluctuations(Zs_out,Tm_p,Tm_hat_p,vm_p,vm_hat_p,FRm)
+  !call generate_fluctuations(Zs_out,Tl_p,Tl_hat_p,vl_p,vl_hat_p,FRl)
+
+  !FL_n = FLn/Zp
+  !FL_m = FLm/Zs
+  !FL_l = FLl/Zs
+
+  !FR_n = FRn/Zp_out
+  !FR_m = FRm/Zs_out
+  !FR_l = FRl/Zs_out
+
+  ! rotate to global
+  !call rotate_nml2xyz(n_n,n_m,n_l,FLn,FLm,FLl,FLx,FLy,FLz)
+  !call rotate_nml2xyz(n_n,n_m,n_l,FRn,FRm,FRl,FRx,FRy,FRz)
+  !call rotate_nml2xyz(n_n,n_m,n_l,FL_n,FL_m,FL_l,FL_x,FL_y,FL_z)
+  !call rotate_nml2xyz(n_n,n_m,n_l,FR_n,FR_m,FR_l,FR_x,FR_y,FR_z)
+
+  !fstar(1) = FLx
+  !fstar(2) = FLy
+  !fstar(3) = FLz
+  !fstar(4) = n_n(1)*FL_x
+  !fstar(5) = n_n(2)*FL_y
+  !fstar(6) = n_n(3)*FL_z
+  !fstar(7) = n_n(3)*FL_y+n_n(2)*FL_z
+  !fstar(8) = n_n(3)*FL_x+n_n(1)*FL_z
+  !fstar(9) = n_n(2)*FL_x+n_n(1)*FL_y
+
+  !if (flux_method == 1 .and. &
+  !    mesh%bctype(is,ie) == BC_IN .and. &
+  !    mesh%fluxtype(is,ie)==1) then
+  !  !fstar = (fR -fL)*0.5
+  !  fstar(1) = dTx
+  !  fstar(2) = dTy
+  !  fstar(3) = dTz
+  !  fstar(4) = n_n(1)*dVx
+  !  fstar(5) = n_n(2)*dVy
+  !  fstar(6) = n_n(3)*dVz
+  !  fstar(7) = n_n(3)*dVy+n_n(2)*dVz
+  !  fstar(8) = n_n(3)*dVx+n_n(1)*dVz
+  !  fstar(9) = n_n(2)*dVx+n_n(1)*dVy
+  !  fstar = 0.5*fstar
+  !end if
+100   fluxs(i+(is-1)*Nfp,:) = fstar
+
+  end do
+  end do
+
+  do i = 1,Nvar
+    fluxs(:,i) = mesh%Fscale(:,ie) * fluxs(:,i)
+  end do
+
+  !fluxes(((ie-1)*Nfp*Nfaces+1):(ie*Nfp*Nfaces),:) = fluxs
+
+  !end do ! element
+
+  !fstar = 0
+end subroutine
+
+subroutine get_flux_dd(mesh,u,ie,qi,fluxs)
+!subroutine get_flux(mesh,u,qi,rho,cp,cs)
+  implicit none
+  type(meshvar) :: mesh
+  real(kind=RKIND),dimension(:,:) :: u
+  real(kind=RKIND),dimension(:,:,:,:) :: qi
+  integer :: i,j,is,ie,ief
+  integer :: neigh,direction
+  real(kind=RKIND) :: rho,rrho,cp,cs
+  real(kind=RKIND) :: rho_out,rrho_out,cp_out,cs_out
+  real(kind=RKIND),dimension(Nfp*Nfaces,Nvar) :: fluxs
+  real(kind=RKIND),dimension(Nvar) :: uL,uR,fstar!,FL,FR!,du,dF,dFx,dFy,dFz
+  real(kind=RKIND),dimension(3) :: n_n,n_m,n_l
+  !real(kind=RKIND),dimension(3,3) :: matTv,invTv
+  !real(kind=RKIND),dimension(6,6) :: matTs,invTs
+  real(kind=RKIND) :: Zp,Zs,Zs_in,Zs_out,Zp_out,eta
+  !real(kind=RKIND) :: alpha(3)
+  real(kind=RKIND) :: tau0n,tau0m,tau0l,vv1,vv2,vel
+  real(kind=RKIND) :: tau_lock,tau_lock_1,tau_lock_2,tau_str,tau_n
+  real(kind=RKIND) :: V_ref,L_ref,coef,tau_n_eff,strength_exp,sigma,dt
+  !real(kind=RKIND) :: sigma,dt
+  real(kind=RKIND) :: fault_mu,mu_s,mu_d,Dc,C0,sliprate,slip
+  integer :: flipped_index(Nfp)
+  integer :: mpi_e,mpi_n
+  !real(kind=RKIND) :: exx,eyy,ezz,eyz,exz,exy
+  !real(kind=RKIND) :: sxx,syy,szz,syz,sxz,sxy
+  real(kind=RKIND) :: Tx,Ty,Tz!,Tn,Tm,Tl
+  real(kind=RKIND) :: Vx,Vy,Vz!,Vn,Vm,Vl
+  real(kind=RKIND) :: depth
+  ! rate state
+  real(kind=RKIND) :: a,b,Vw,psi,Phi,sigma_n,V,V0,f0,L0,fv,flv,fss,fw,psiss
+  real(kind=RKIND) :: Gt
+  real(kind=RKIND) :: vn_p,vm_p,vl_p,Tn_p,Tm_p,Tl_p
+  real(kind=RKIND) :: vn_m,vm_m,vl_m,Tn_m,Tm_m,Tl_m
+  real(kind=RKIND) :: vn_hat_p,vm_hat_p,vl_hat_p,Tn_hat_p,Tm_hat_p,Tl_hat_p
+  real(kind=RKIND) :: vn_hat_m,vm_hat_m,vl_hat_m,Tn_hat_m,Tm_hat_m,Tl_hat_m
+  real(kind=RKIND) :: FLn,FLm,FLl
+  !real(kind=RKIND) :: FRn,FRm,FRl
+  real(kind=RKIND) :: FL_n,FL_m,FL_l
+  !real(kind=RKIND) :: FR_n,FR_m,FR_l
+  real(kind=RKIND) :: FLx,FLy,FLz
+  !real(kind=RKIND) :: FRx,FRy,FRz
+  real(kind=RKIND) :: FL_x,FL_y,FL_z
+  !real(kind=RKIND) :: FR_x,FR_y,FR_z
+  real(kind=RKIND) :: dVx,dVy,dVz
+  real(kind=RKIND) :: dTx,dTy,dTz
+  real(kind=RKIND) :: T0
 
 
 
@@ -582,7 +1284,7 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
   dTy = dTy + Ty
   dTz = dTz + Tz
 
-  if (flux_method == 1 .and. &
+  if (flux_method == 2 .and. &
       mesh%bctype(is,ie) == BC_IN .and. &
       mesh%fluxtype(is,ie) == 1) then
     !fstar = (fR -fL)*0.5
@@ -599,6 +1301,21 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
     goto 100
   end if
 
+  if (flux_method == 1 .and. &
+      mesh%bctype(is,ie) == BC_IN ) then
+    !fstar = (fR -fL)*0.5
+    fstar(1) = dTx
+    fstar(2) = dTy
+    fstar(3) = dTz
+    fstar(4) = n_n(1)*dVx
+    fstar(5) = n_n(2)*dVy
+    fstar(6) = n_n(3)*dVz
+    fstar(7) = n_n(3)*dVy+n_n(2)*dVz
+    fstar(8) = n_n(3)*dVx+n_n(1)*dVz
+    fstar(9) = n_n(2)*dVx+n_n(1)*dVy
+    fstar = 0.5*fstar
+    goto 100
+  end if
 
   ! rotate to local
   call rotate_xyz2nml(n_n,n_m,n_l,Tx,Ty,Tz,Tn_p,Tm_p,Tl_p)
@@ -720,20 +1437,20 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
       Tau_n = Tau_n + mesh%TP_P(i,is,ief)
     end if
 
-#ifdef TPV6
-!!!if (.false.) then
-!!!      ! for tpv6
-!!!      ! Prakash-Clifton
-!!!      V_ref = 1.0
-!!!      L_ref = 0.2*Dc
-!!!      !L_ref = 5*Dc
-!!!      dt = mesh%deltat
-!!!      coef = dt/L_ref
-!!!      Tau_n_eff = Tau_n + exp(-(sliprate+V_ref)*coef)*(mesh%sigma(i,is,ie)-Tau_n)
-!!!      !
-!!!      if(sliprate > 0.01) Tau_n = Tau_n_eff
-!!!end if
-#endif
+!#ifdef TPV6
+if (.false.) then
+      ! for tpv6
+      ! Prakash-Clifton
+      V_ref = 1.0
+      L_ref = 0.2*Dc
+      !L_ref = 5*Dc
+      dt = mesh%deltat
+      coef = dt/L_ref
+      Tau_n_eff = Tau_n + exp(-(sliprate+V_ref)*coef)*(mesh%sigma(i,is,ie)-Tau_n)
+      !
+      if(sliprate > 0.01) Tau_n = Tau_n_eff
+end if
+!#endif
 
 
 !!!#if defined (TPV24) || defined (TPV26) || defined (TPV29) || defined (WENCHUAN) || defined(TW)
@@ -753,6 +1470,17 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
       call time_weakening(y,z,nucleate_y0,nucleate_z0,nucleate_rcrit,&
           nucleate_Vrup,TimeForcedRup,cur_time,&
           slip,Dc,mu_s,mu_d,fault_mu)
+    end if
+
+    if (friction_law == 5) then
+      ! forced rupture
+      T0 = mesh%a(i,is,ief)
+      if (slip < Dc .and. cur_time < T0) then
+        ! slip weakening
+        fault_mu = mu_s - (mu_s-mu_d) * min(slip/Dc,1.0)
+      else
+        fault_mu = mu_d
+      end if
     end if
 
     !!Pf = 9.8*(-z) ! In MPa
@@ -994,6 +1722,7 @@ subroutine get_flux(mesh,u,ie,qi,fluxs)
 end subroutine
 
 
+
 subroutine time_weakening(y,z,y0,z0,rcrit,Vr,t0,cur_time,slip,Dc,mu_s,mu_d,mu_f)
   implicit none
   real(kind=RKIND) :: T,t0,f1,f2,dist,rcrit,Vr
@@ -1193,19 +1922,19 @@ end subroutine
 !   exy = sxy / miu
 ! end subroutine
 
-! elemental subroutine prakash_cliff_fric(strength,sigma,V,Vstar,L,mu,dt)
-!   implicit none
-!   real(kind=RKIND), intent(inout):: strength !< shear strength (or friction)
-!   real(kind=RKIND), intent(in)   :: V        !< slip velocity
-!   real(kind=RKIND), intent(in)   :: sigma    !< normal traction
-!   real(kind=RKIND), intent(in)   :: Vstar    !< referenz Velocity
-!   real(kind=RKIND), intent(in)   :: L        !< referenz length
-!   real(kind=RKIND), intent(in)   :: mu       !< friction coefficient
-!   real(kind=RKIND), intent(in)   :: dt       !< time increment
-!   real(kind=RKIND) :: expterm
-!   expterm=exp(-(abs(V) + Vstar)*dt/L)
-!   strength =   strength*expterm - max(0.,-mu*sigma)*(expterm-1.)
-! end subroutine prakash_cliff_fric
+elemental subroutine prakash_cliff_fric(strength,sigma,V,Vstar,L,mu,dt)
+  implicit none
+  real(kind=RKIND), intent(inout):: strength !< shear strength (or friction)
+  real(kind=RKIND), intent(in)   :: V        !< slip velocity
+  real(kind=RKIND), intent(in)   :: sigma    !< normal traction
+  real(kind=RKIND), intent(in)   :: Vstar    !< referenz Velocity
+  real(kind=RKIND), intent(in)   :: L        !< referenz length
+  real(kind=RKIND), intent(in)   :: mu       !< friction coefficient
+  real(kind=RKIND), intent(in)   :: dt       !< time increment
+  real(kind=RKIND) :: expterm
+  expterm=exp(-(abs(V) + Vstar)*dt/L)
+  strength =   strength*expterm - max(0.,-mu*sigma)*(expterm-1.)
+end subroutine prakash_cliff_fric
 
 !subroutine Return_Map(exx,eyy,ezz,eyz,exz,exy,rho,cp,cs,depth,dt,&
 !                      sxx,syy,szz,syz,sxz,sxy)

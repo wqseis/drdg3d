@@ -62,6 +62,9 @@ use mod_io_grdsurf, only : grdsurf_io_init,       &
 use mod_io_recv,    only : recv_io_init,          &
                            recv_io_save,          &
                            recv_io_end
+use mod_io_energy,  only : energy_io_init,          &
+                           energy_io_save,          &
+                           energy_io_end
 !use mod_source
 use mod_recv,       only : locate_recvs
 
@@ -175,6 +178,8 @@ call fault_io_init(mesh)
 call grdsurf_io_init(mesh)
 
 call recv_io_init(mesh)
+
+call energy_io_init(mesh)
 
 call sync_print()
 
@@ -374,11 +379,14 @@ do it = 1,nt
     call write_wave_vtk(mesh,u)
   end if
 
+  call energy_io_save(mesh,u,it)
+
 end do
 
 call fault_io_end(mesh)
 call grdsurf_io_end(mesh)
 call recv_io_end(mesh)
+call energy_io_end(mesh)
 
 call cpu_time(time_end)
 

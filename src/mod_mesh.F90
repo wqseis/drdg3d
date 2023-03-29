@@ -401,6 +401,7 @@ subroutine readMeshVar(this)
   allocate(this%zs (this%nelem))
   allocate(this%mu (this%nelem))
   allocate(this%lam(this%nelem))
+  allocate(this%vol(this%nelem))
 
   if (nproc > 1) then
   allocate(this%mpi_neighbor(this%mpi_nn))

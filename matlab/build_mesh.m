@@ -9,12 +9,21 @@ num_free_segments = length(freesurf_id);
 %fnm_out = 'mesh.nc';
 
 coord = ncread(fnm_in, 'coord');
+%coord = coord * 1e-3; % Add by xxt@20230224, for the present mesh is in m, but not km.
 
-connect1 = ncread(fnm_in,['connect',num2str(tet_id)]);
+num_tets = length(tet_id);
+
+connect = [];
+for i = 1:num_tets
+    connect1 = ncread(fnm_in,['connect',num2str(tet_id(i))]);
+    connect = [connect,connect1];
+end
+    
+
 %connect2 = ncread(fnm,'connect51');
 %connect3 = ncread(fnm,'connect52');
 %connect = [connect1,connect2,connect3];
-connect = connect1;
+%connect = connect1;
 
 % if there are > 2 connects
 % connect = [connect1,connect2,...,connectn];
@@ -31,7 +40,15 @@ end
 
 if num_free_segments > 0
 % free surface
-fr = ncread(fnm_in,['connect',num2str(freesurf_id)]);
+
+fr = [];
+for i = 1:num_free_segments
+    fr1 = ncread(fnm_in,['connect',num2str(freesurf_id(i))]);
+    fr = [fr,fr1];
+end
+
+%fr = ncread(fnm_in,['connect',num2str(freesurf_id)]);
+
 
 freenodes = unique(sort(fr(:)));
 

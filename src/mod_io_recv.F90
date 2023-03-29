@@ -25,6 +25,7 @@ module mod_io_recv
                         BC_FREE,         &
                         BC_FAULT,        &
                         MAX_NUM_RECV,    &
+                        NVAR_RECV,       &
                         data_dir
   use mod_types, only : meshvar
   use mod_interp, only: tri_interp
@@ -93,8 +94,8 @@ subroutine recv_io_init(mesh)
   call check2(ierr,'def_dim Nt')
   ierr = nf90_def_dim(recv_ncid, "three", 3, dimid(3))
   call check2(ierr,'def_dim 3')
-  ierr = nf90_def_dim(recv_ncid, "ten", 10, dimid(4))
-  call check2(ierr,'def_dim 10')
+  ierr = nf90_def_dim(recv_ncid, "Nvar", NVAR_RECV, dimid(4))
+  call check2(ierr,'def_dim Nvar')
 
   ! define variables
   ierr = nf90_def_var(recv_ncid, "id", NF90_INT, dimid(1), varid(1))
@@ -125,7 +126,7 @@ subroutine recv_io_init(mesh)
   ierr = nf90_put_var(recv_ncid, varid(4), mesh%recv_normal)
   call check2(ierr,'put_var recv_normal')
 
-  allocate(val(mesh%nrecv,10))
+  allocate(val(mesh%nrecv,NVAR_RECV))
 end subroutine
 
 subroutine recv_io_save(mesh,u,it)
@@ -164,13 +165,16 @@ subroutine recv_io_save(mesh,u,it)
           mesh%recv_buffer(:,n,8)  = mesh%state    (:,is,ief)
           mesh%recv_buffer(:,n,9)  = mesh%TP_T     (:,is,ief)
           mesh%recv_buffer(:,n,10) = mesh%TP_P     (:,is,ief)
+          mesh%recv_buffer(:,n,11) = u(mesh%vmapM(:,is,ie),1)/mesh%rho(ie)
+          mesh%recv_buffer(:,n,12) = u(mesh%vmapM(:,is,ie),2)/mesh%rho(ie)
+          mesh%recv_buffer(:,n,13) = u(mesh%vmapM(:,is,ie),3)/mesh%rho(ie)
         end if
       end do
     end do
   enddo
 
   do j = 1,mesh%nrecv
-    do i = 1,10
+    do i = 1,NVAR_RECV
       v1=(/ &
           mesh%vx(mesh%vmapM(1,mesh%recv_face(j),mesh%recv_elem(j))), &
           mesh%vy(mesh%vmapM(1,mesh%recv_face(j),mesh%recv_elem(j))), &
@@ -209,7 +213,7 @@ subroutine recv_io_save(mesh,u,it)
   !val(1) = mesh%recv_buffer(1,1,1)
 
   ierr = nf90_put_var(recv_ncid,recv_varid(2), &
-      (/sngl(val(1:mesh%nrecv,1:10))/),(/1,1,it/),(/mesh%nrecv,10,1/),(/1,1/))
+      (/sngl(val(1:mesh%nrecv,1:NVAR_RECV))/),(/1,1,it/),(/mesh%nrecv,NVAR_RECV,1/),(/1,1/))
   call check2(ierr,'put_var vars')
 
   ierr = nf90_sync(recv_ncid)

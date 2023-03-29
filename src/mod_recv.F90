@@ -21,6 +21,7 @@ module mod_recv
 
   use mod_para, only : RKIND,         &
                        MAX_NUM_RECV,  &
+                       NVAR_RECV,     &
                        BC_FREE,       &
                        BC_FAULT,      &
                        Nfp,           &
@@ -169,7 +170,7 @@ subroutine locate_recvs(mesh)
     allocate(mesh%recv_face(1:mesh%nrecv))
     allocate(mesh%recv_coord(1:3,1:mesh%nrecv))
     allocate(mesh%recv_normal(1:3,1:mesh%nrecv))
-    allocate(mesh%recv_buffer(Nfp,mesh%nrecv,10))
+    allocate(mesh%recv_buffer(Nfp,mesh%nrecv,NVAR_RECV))
     mesh%recv_id = recv_id(1:mesh%nrecv)
     mesh%recv_bctype = recv_bctype_loc(1:mesh%nrecv)
     mesh%recv_elem = recv_elem(1:mesh%nrecv)
@@ -206,6 +207,7 @@ function PointInTet(v1,v2,v3,v4,p)
   real*8 :: tol
 
   tol = 1e-5 * norm3(v1-v2)
+  tol = 1e-3 * norm3(v1-v2)
 
   PointInTet = .False.
 
