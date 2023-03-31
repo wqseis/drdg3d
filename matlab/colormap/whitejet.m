@@ -227,7 +227,7 @@ c=[...
 6 0 0;
 0 0 0;
 ];
-c = [repmat(c(1,:),2,1);c;repmat(c(1,:),1,1)];
+c = [repmat(c(1,:),2,1);c;repmat(c(end,:),1,1)];
 %... Interpolate get requested size for color table
 pp=1:(m-1)/(size(c,1)-1):m;
 r=interp1(pp,c(:,1),1:m);
