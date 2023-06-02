@@ -1,4 +1,4 @@
-﻿# DRDG3D
+﻿# DRDG3D [![DOI](https://zenodo.org/badge/593392070.svg)](https://zenodo.org/badge/latestdoi/593392070)
 
 For 3D dynamic rupture (DR) modelling, using a nodal discontinuous Galerkin (DG) finite element method [[1]](#1).
 
