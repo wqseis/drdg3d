@@ -67,3 +67,5 @@ Use **draw_fault_snap.m** to draw the snapshots of fault slip rate (or slip, str
 
 <a id="1">[1]</a> Wenqiang Zhang, Yajing Liu, Xiaofei Chen. A Mixed-Flux-Based Nodal Discontinuous Galerkin Method for 3D Dynamic Rupture Modeling. *_ESS Open Archive_.* November 01, 2022. DOI: [10.1002/essoar.10512657.1](https://www.doi.org/10.1002/essoar.10512657.1)
 
+<a id="2">[2]</a> Zhang, W., Liu, Y., & Chen, X. (2023). A mixed-flux-based nodal discontinuous Galerkin method for 3D dynamic rupture modeling. Journal of Geophysical Research: Solid Earth, 128, e2022JB025817. [https://doi.org/10.1029/2022JB025817](https://doi.org/10.1029/2022JB025817)
+
